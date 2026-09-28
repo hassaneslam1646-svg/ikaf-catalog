@@ -1,0 +1,424 @@
+<title>كتالوج إكاف بالكود</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Poppins:wght@500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --navy:#242E64;
+  --navy-soft:#2E3A7D;
+  --orange:#FA9223;
+  --bg:#EDEFF6;
+  --surface:#FFFFFF;
+  --surface-2:#F6F7FB;
+  --ink:#171B33;
+  --muted:#6A7089;
+  --line:#D8DCEA;
+  --chip:#FFFFFF;
+  --shadow:0 1px 2px rgba(23,27,51,.06), 0 8px 24px rgba(23,27,51,.07);
+  --bar-ink:#FFFFFF;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --navy:#1A2150;
+    --navy-soft:#242E64;
+    --orange:#FFA33F;
+    --bg:#0E1122;
+    --surface:#191E38;
+    --surface-2:#141930;
+    --ink:#EDEFF8;
+    --muted:#98A0BE;
+    --line:#2A3159;
+    --chip:#1F2544;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.35);
+    --bar-ink:#FFFFFF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --navy:#1A2150;
+  --navy-soft:#242E64;
+  --orange:#FFA33F;
+  --bg:#0E1122;
+  --surface:#191E38;
+  --surface-2:#141930;
+  --ink:#EDEFF8;
+  --muted:#98A0BE;
+  --line:#2A3159;
+  --chip:#1F2544;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.35);
+  --bar-ink:#FFFFFF;
+}
+
+*{box-sizing:border-box}
+body{
+  direction:rtl;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Tajawal","Segoe UI",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  margin:0;
+}
+.num{font-family:"Poppins","Tajawal",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* ---------- header ---------- */
+.bar{
+  position:sticky;
+  top:env(safe-area-inset-top, 0px);
+  z-index:30;
+  background:var(--navy);
+  color:var(--bar-ink);
+  box-shadow:0 6px 20px rgba(23,27,51,.18);
+}
+.bar-in{
+  max-width:1180px;margin:0 auto;
+  padding-block:12px;padding-inline:16px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mark{
+  font-weight:800;font-size:15px;letter-spacing:.02em;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.mark .dash{width:22px;height:3px;background:var(--orange);border-radius:2px;display:inline-block}
+.sub{color:rgba(255,255,255,.62);font-size:12.5px;margin-inline-start:auto}
+
+.searchwrap{position:relative;display:flex;align-items:center}
+.searchwrap svg{position:absolute;inset-inline-start:14px;width:18px;height:18px;opacity:.55;pointer-events:none}
+#q{
+  width:100%;
+  padding:13px 44px 13px 44px;
+  border:1.5px solid rgba(255,255,255,.18);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  font-family:"Poppins","Tajawal",system-ui,sans-serif;
+  font-size:16px;font-weight:600;letter-spacing:.02em;
+  outline:none;
+}
+#q::placeholder{color:rgba(255,255,255,.55);font-family:"Tajawal",system-ui,sans-serif;font-weight:400;letter-spacing:0}
+#q:focus{border-color:var(--orange);background:rgba(255,255,255,.16)}
+#clear{
+  position:absolute;inset-inline-end:8px;
+  border:0;background:rgba(255,255,255,.14);color:#fff;
+  width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;
+}
+#clear:hover{background:rgba(255,255,255,.26)}
+
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.chip{
+  flex:0 0 auto;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.86);
+  border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;
+  font-family:"Poppins","Tajawal",system-ui,sans-serif;font-weight:600;
+  white-space:nowrap;
+}
+.chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#231400}
+.chip .n{opacity:.6;font-size:11px;margin-inline-start:4px}
+
+/* ---------- body ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
+.count{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.count b{color:var(--ink);font-family:"Poppins",sans-serif}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:12px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  cursor:pointer;
+  text-align:start;
+  padding:0;
+  font:inherit;
+  color:inherit;
+  display:flex;flex-direction:column;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover,.card:focus-visible{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--orange);outline:none}
+.card img{display:block;width:100%;aspect-ratio:66/100;object-fit:cover;background:var(--surface-2)}
+.meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:5px}
+.code{
+  font-family:"Poppins",monospace;font-weight:600;font-size:12.5px;
+  letter-spacing:.01em;color:var(--ink);direction:ltr;text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+.metarow{display:flex;align-items:center;gap:6px}
+.badge{
+  background:var(--orange);color:#231400;
+  font-family:"Poppins",sans-serif;font-weight:700;font-size:11.5px;
+  padding:2px 7px;border-radius:6px;letter-spacing:.02em;
+}
+.pg{color:var(--muted);font-size:11.5px;margin-inline-start:auto}
+.model{color:var(--muted);font-size:12px;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+
+.empty{
+  background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
+  padding:40px 20px;text-align:center;color:var(--muted);
+}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+
+.foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+
+/* ---------- lightbox ---------- */
+.lb{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(8,10,22,.82);
+  backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+}
+.lb-box{
+  background:var(--surface);border-radius:16px;overflow:hidden;
+  width:min(920px,100%);max-height:100%;
+  display:flex;flex-direction:row-reverse;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.lb-img{flex:1 1 52%;background:var(--navy);display:flex;align-items:center;justify-content:center;min-width:0}
+.lb-img img{width:100%;height:100%;max-height:78vh;object-fit:contain;display:block}
+.lb-side{flex:1 1 48%;padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.lb-head{display:flex;align-items:flex-start;gap:10px}
+.lb-title{font-size:12.5px;color:var(--muted);margin:0 0 2px}
+.lb-code{font-family:"Poppins",monospace;font-weight:700;font-size:20px;direction:ltr;text-align:left;letter-spacing:.01em;word-break:break-all}
+.x{margin-inline-start:auto;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+   width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:18px;line-height:1;flex:0 0 auto}
+.x:hover{border-color:var(--orange)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;align-items:baseline}
+.kv dt{color:var(--muted);font-size:13px}
+.kv dd{margin:0}
+.bigbadge{background:var(--orange);color:#231400;font-family:"Poppins",sans-serif;font-weight:700;
+  font-size:15px;padding:3px 10px;border-radius:8px;display:inline-block}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.btn{
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  border-radius:10px;padding:9px 13px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;
+}
+.btn:hover{border-color:var(--orange)}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#231400;font-weight:700}
+@media (max-width:640px){
+  .lb-box{flex-direction:column;overflow-y:auto}
+  .lb-img img{max-height:46vh}
+  .lb-side{padding:16px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brandrow">
+      <span class="mark"><span class="dash"></span>كتالوج إكاف — تحديث الكميات ٧-٩-٢٠٢٦</span>
+      <span class="sub num">155 صنف</span>
+    </div>
+    <div class="searchwrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="q" type="search" inputmode="search" autocomplete="off" spellcheck="false"
+             placeholder="اكتب الكود أو جزء منه… مثال: 10420211024660">
+      <button id="clear" type="button" title="مسح" hidden>×</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    <b>مفيش كود مطابق</b>
+    جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).
+  </div>
+  <p class="foot">
+    الأكواد والريشيو مأخوذين من ملف «تحديث الكميات بتاريخ ٧-٩-٢٠٢٦» بعد إضافة الريشيو من شجرة أكواد الجلابية ٢٢-٨-٢٠٢٦.
+    البحث بيشتغل بالكود الكامل (١٤ رقم) أو بالكود الموحّد (١١ رقم) أو بأي جزء منهم.
+  </p>
+</div>
+
+<script id="data" type="application/json">[{"p": 2, "c": "10120111023129", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10120111023"}, {"p": 3, "c": "10120111023340", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10120111023"}, {"p": 4, "c": "10120211023157", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10120211023"}, {"p": 5, "c": "10420211014903", "r": "A", "rn": "مقاس A", "m": "نص كم عادي", "mc": "02", "rc": "01", "u": "10420211014"}, {"p": 6, "c": "10420211024151", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 7, "c": "10420211024408", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 8, "c": "10420211024633", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 9, "c": "10420211024655", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 10, "c": "10420211024660", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 11, "c": "10420211024900", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 12, "c": "10420211024902", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 13, "c": "10420211024905", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 14, "c": "10420211024906", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 15, "c": "10420421064920", "r": "F", "rn": "مقاس F", "m": "كم طويل عادي", "mc": "04", "rc": "06", "u": "10420421064"}, {"p": 16, "c": "10421511024411", "r": "B", "rn": "مقاس B", "m": "كم طويل مع قبع ( مخصر )", "mc": "15", "rc": "02", "u": "10421511024"}, {"p": 17, "c": "10425111024411", "r": "B", "rn": "مقاس B", "m": "مغربى عادى كم طويل", "mc": "51", "rc": "02", "u": "10425111024"}, {"p": 18, "c": "10425111024415", "r": "B", "rn": "مقاس B", "m": "مغربى عادى كم طويل", "mc": "51", "rc": "02", "u": "10425111024"}, {"p": 19, "c": "10426611014404", "r": "A22", "rn": "مقاس A", "m": "نصف كم عادى عرض 22", "mc": "66", "rc": "01", "u": "10426611014"}, {"p": 20, "c": "10426611024608", "r": "B22", "rn": "مقاس B", "m": "نصف كم عادى عرض 22", "mc": "66", "rc": "02", "u": "10426611024"}, {"p": 21, "c": "10426621024420", "r": "B22", "rn": "مقاس B", "m": "نصف كم عادى عرض 22", "mc": "66", "rc": "02", "u": "10426621024"}, {"p": 22, "c": "10427011024148", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427011024"}, {"p": 23, "c": "10427011024659", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427011024"}, {"p": 24, "c": "10427011024901", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427011024"}, {"p": 25, "c": "10427011024904", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427011024"}, {"p": 26, "c": "10427021024420", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427021024"}, {"p": 27, "c": "10420211034706", "r": "C", "rn": "مقاس C", "m": "نص كم عادي", "mc": "02", "rc": "03", "u": "10420211034"}, {"p": 28, "c": "10420211034906", "r": "C", "rn": "مقاس C", "m": "نص كم عادي", "mc": "02", "rc": "03", "u": "10420211034"}, {"p": 29, "c": "10420211054409", "r": "E", "rn": "مقاس E", "m": "نص كم عادي", "mc": "02", "rc": "05", "u": "10420211054"}, {"p": 30, "c": "10420211054910", "r": "E", "rn": "مقاس E", "m": "نص كم عادي", "mc": "02", "rc": "05", "u": "10420211054"}, {"p": 31, "c": "10420211064146", "r": "F", "rn": "مقاس F", "m": "نص كم عادي", "mc": "02", "rc": "06", "u": "10420211064"}, {"p": 32, "c": "10420211194151", "r": "N", "rn": "N", "m": "نص كم عادي", "mc": "02", "rc": "19", "u": "10420211194"}, {"p": 33, "c": "10420221014420", "r": "A", "rn": "مقاس A", "m": "نص كم عادي", "mc": "02", "rc": "01", "u": "10420221014"}, {"p": 34, "c": "10420221024920", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420221024"}, {"p": 35, "c": "10427021024920", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427021024"}, {"p": 36, "c": "10427121024150", "r": "B24", "rn": "مقاس B", "m": "كم عادى عرض 24", "mc": "71", "rc": "02", "u": "10427121024"}, {"p": 37, "c": "10427211024116", "r": "B24", "rn": "مقاس B", "m": "نصف كم مطرز عرض 24", "mc": "72", "rc": "02", "u": "10427211024"}, {"p": 38, "c": "10427411064707", "r": "F26", "rn": "مقاس F", "m": "نصف كم عادى عرض 26", "mc": "74", "rc": "06", "u": "10427411064"}, {"p": 39, "c": "10477211024150", "r": "B24", "rn": "مقاس B", "m": "نصف كم مطرز عرض 24", "mc": "72", "rc": "02", "u": "10477211024"}, {"p": 40, "c": "10610311061140", "r": "F", "rn": "مقاس F", "m": "كم طويل مطرز", "mc": "03", "rc": "06", "u": "10610311061"}, {"p": 41, "c": "10620111011236", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111011"}, {"p": 42, "c": "10620111011239", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111011"}, {"p": 43, "c": "10620111011345", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111011"}, {"p": 44, "c": "10620111014158", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111014"}, {"p": 45, "c": "10620111014160", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111014"}, {"p": 46, "c": "10620111014340", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111014"}, {"p": 47, "c": "10620111021216", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 48, "c": "10620111021239", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 49, "c": "10620111021658", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 50, "c": "10620111022749", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111022"}, {"p": 51, "c": "10620111061291", "r": "F", "rn": "مقاس F", "m": "نص كم مطرز", "mc": "01", "rc": "06", "u": "10620111061"}, {"p": 52, "c": "10620112104967", "r": "I", "rn": "مقاس I", "m": "نص كم مطرز", "mc": "01", "rc": "10", "u": "10620112104"}, {"p": 53, "c": "10620311011168", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "10620311011"}, {"p": 54, "c": "10920111021052", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 55, "c": "10920111021056", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 56, "c": "10920111021171", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 57, "c": "10920111021198", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 58, "c": "10920111022339", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111022"}, {"p": 59, "c": "10920111023821", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111023"}, {"p": 60, "c": "10920111024069", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 61, "c": "10920111024078", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 62, "c": "10920111024293", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 63, "c": "10920111024396", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 64, "c": "10920111024408", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 65, "c": "10920111024479", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 66, "c": "10620411164004", "r": "P", "rn": "P", "m": "كم طويل عادي", "mc": "04", "rc": "16", "u": "10620411164"}, {"p": 67, "c": "10620411174008", "r": "Q", "rn": "Q", "m": "كم طويل عادي", "mc": "04", "rc": "17", "u": "10620411174"}, {"p": 68, "c": "10910311061325", "r": "F", "rn": "مقاس F", "m": "كم طويل مطرز", "mc": "03", "rc": "06", "u": "10910311061"}, {"p": 69, "c": "10920111011400", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10920111011"}, {"p": 70, "c": "10920111013135", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10920111013"}, {"p": 71, "c": "10920111013797", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10920111013"}, {"p": 72, "c": "10920111021002", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 73, "c": "10920111021042", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 74, "c": "10920111024506", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 75, "c": "10920111024786", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 76, "c": "10920111024814", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 77, "c": "10920111024916", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111024"}, {"p": 78, "c": "10920111061371", "r": "F", "rn": "مقاس F", "m": "نص كم مطرز", "mc": "01", "rc": "06", "u": "10920111061"}, {"p": 79, "c": "10920311014062", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "10920311014"}, {"p": 80, "c": "10920311014816", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "10920311014"}, {"p": 81, "c": "12207811021000", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "12207811021"}, {"p": 82, "c": "12207811022000", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "12207811022"}, {"p": 83, "c": "12670111011973", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "12670111011"}, {"p": 84, "c": "12670311011973", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "12670311011"}, {"p": 85, "c": "12670311011976", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "12670311011"}, {"p": 86, "c": "13221001014103", "r": "A", "rn": "مقاس A", "m": "مغربي قيطان نص كم", "mc": "10", "rc": "01", "u": "13221001014"}, {"p": 87, "c": "16107811024001", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "16107811024"}, {"p": 88, "c": "16107811024002", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "16107811024"}, {"p": 89, "c": "16107811024003", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "16107811024"}, {"p": 90, "c": "16107811024004", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "16107811024"}, {"p": 91, "c": "16407811024000", "r": "B", "rn": "مقاس B", "m": "اماراتى كم مطرز عرض عادى", "mc": "78", "rc": "02", "u": "16407811024"}, {"p": 92, "c": "16407911014000", "r": "A22/24", "rn": "مقاس A", "m": "اماراتى كم مطرز عرض مخصر(slim fit-22:24)", "mc": "79", "rc": "01", "u": "16407911014"}, {"p": 93, "c": "16407911014100", "r": "A22/24", "rn": "مقاس A", "m": "اماراتى كم مطرز عرض مخصر(slim fit-22:24)", "mc": "79", "rc": "01", "u": "16407911014"}, {"p": 94, "c": "10427011024602", "r": "B24", "rn": "مقاس B", "m": "نصف كم عادى عرض 24", "mc": "70", "rc": "02", "u": "10427011024"}, {"p": 95, "c": "10920111022003", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111022"}, {"p": 96, "c": "10426611024661", "r": "B22", "rn": "مقاس B", "m": "نصف كم عادى عرض 22", "mc": "66", "rc": "02", "u": "10426611024"}, {"p": 97, "c": "10620111021821", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 98, "c": "10920311991815", "r": "SPECIAL", "rn": "speichal", "m": "كم طويل مطرز", "mc": "03", "rc": "99", "u": "10920311991"}, {"p": 99, "c": "10920111021024", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 100, "c": "10420211014901", "r": "A", "rn": "مقاس A", "m": "نص كم عادي", "mc": "02", "rc": "01", "u": "10420211014"}, {"p": 101, "c": "10920111021068", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 102, "c": "10620311022025", "r": "B", "rn": "مقاس B", "m": "كم طويل مطرز", "mc": "03", "rc": "02", "u": "10620311022"}, {"p": 103, "c": "10920112101719", "r": "I", "rn": "مقاس I", "m": "نص كم مطرز", "mc": "01", "rc": "10", "u": "10920112101"}, {"p": 104, "c": "10427411064707", "r": "F26", "rn": "مقاس F", "m": "نصف كم عادى عرض 26", "mc": "74", "rc": "06", "u": "10427411064"}, {"p": 105, "c": "17321001014112", "r": "A", "rn": "مقاس A", "m": "مغربي قيطان نص كم", "mc": "10", "rc": "01", "u": "17321001014"}, {"p": 106, "c": "17321001024111", "r": "B", "rn": "مقاس B", "m": "مغربي قيطان نص كم", "mc": "10", "rc": "02", "u": "17321001024"}, {"p": 107, "c": "17321201024114", "r": "B", "rn": "مقاس B", "m": "مغربي قيطان + شريط نص كم (مخصر)", "mc": "12", "rc": "02", "u": "17321201024"}, {"p": 108, "c": "17321001024115", "r": "B", "rn": "مقاس B", "m": "مغربي قيطان نص كم", "mc": "10", "rc": "02", "u": "17321001024"}, {"p": 109, "c": "17326501024110", "r": "B", "rn": "مقاس B", "m": "مغربى شريط نصف كم", "mc": "65", "rc": "02", "u": "17326501024"}, {"p": 110, "c": "10920111051009", "r": "E", "rn": "مقاس E", "m": "نص كم مطرز", "mc": "01", "rc": "05", "u": "10920111051"}, {"p": 111, "c": "12670111011979", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "12670111011"}, {"p": 112, "c": "10422121014008", "r": "A", "rn": "مقاس A", "m": "مغربي قيطان + شريط كم طويل", "mc": "21", "rc": "01", "u": "10422121014"}, {"p": 113, "c": "10420211024660", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 114, "c": "10420211024633", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 115, "c": "10920421024800", "r": "B", "rn": "مقاس B", "m": "كم طويل عادي", "mc": "04", "rc": "02", "u": "10920421024"}, {"p": 116, "c": "10620111021164", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 117, "c": "10620111011759", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111011"}, {"p": 118, "c": "10920311031041", "r": "C", "rn": "مقاس C", "m": "كم طويل مطرز", "mc": "03", "rc": "03", "u": "10920311031"}, {"p": 119, "c": "10920111021042", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111021"}, {"p": 120, "c": "10920121021101", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920121021"}, {"p": 121, "c": "10420211014901", "r": "A", "rn": "مقاس A", "m": "نص كم عادي", "mc": "02", "rc": "01", "u": "10420211014"}, {"p": 122, "c": "10426611014414", "r": "A22", "rn": "مقاس A", "m": "نصف كم عادى عرض 22", "mc": "66", "rc": "01", "u": "10426611014"}, {"p": 123, "c": "10620111021121", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10620111021"}, {"p": 124, "c": "10920111022004", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10920111022"}, {"p": 125, "c": "10920111031008", "r": "C", "rn": "مقاس C", "m": "نص كم مطرز", "mc": "01", "rc": "03", "u": "10920111031"}, {"p": 126, "c": "10620111011216", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "10620111011"}, {"p": 127, "c": "12670111011506", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "12670111011"}, {"p": 128, "c": "10420111024361", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10420111024"}, {"p": 129, "c": "10420111024370", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10420111024"}, {"p": 130, "c": "10420111024374", "r": "B", "rn": "مقاس B", "m": "نص كم مطرز", "mc": "01", "rc": "02", "u": "10420111024"}, {"p": 131, "c": "10420311014348", "r": "A", "rn": "مقاس A", "m": "كم طويل مطرز", "mc": "03", "rc": "01", "u": "10420311014"}, {"p": 132, "c": "10420211024659", "r": "B", "rn": "مقاس B", "m": "نص كم عادي", "mc": "02", "rc": "02", "u": "10420211024"}, {"p": 133, "c": "10620311161001", "r": "P", "rn": "P", "m": "كم طويل مطرز", "mc": "03", "rc": "16", "u": "10620311161"}, {"p": 134, "c": "10920112101969", "r": "I", "rn": "مقاس I", "m": "نص كم مطرز", "mc": "01", "rc": "10", "u": "10920112101"}, {"p": 135, "c": "10920112104969", "r": "I", "rn": "مقاس I", "m": "نص كم مطرز", "mc": "01", "rc": "10", "u": "10920112104"}, {"p": 136, "c": "12670111011318", "r": "A", "rn": "مقاس A", "m": "نص كم مطرز", "mc": "01", "rc": "01", "u": "12670111011"}, {"p": 137, "c": "10420211034902", "r": "C", "rn": "مقاس C", "m": "نص كم عادي", "mc": "02", "rc": "03", "u": "10420211034"}, {"p": 138, "c": "10620411174018", "r": "Q", "rn": "Q", "m": "كم طويل عادي", "mc": "04", "rc": "17", "u": "10620411174"}, {"p": 139, "c": "10120411994707", "r": "SPECIAL", "rn": "speichal", "m": "كم طويل عادي", "mc": "04", "rc": "99", "u": "10120411994"}, {"p": 140, "c": "10120313124723", "r": "K", "rn": "مقاس K", "m": "كم طويل مطرز", "mc": "03", "rc": "12", "u": "10120313124"}, {"p": 141, "c": "10620113124195", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10620113124"}, {"p": 142, "c": "10620313124729", "r": "K", "rn": "مقاس K", "m": "كم طويل مطرز", "mc": "03", "rc": "12", "u": "10620313124"}, {"p": 143, "c": "10920313124309", "r": "K", "rn": "مقاس K", "m": "كم طويل مطرز", "mc": "03", "rc": "12", "u": "10920313124"}, {"p": 144, "c": "10920113121048", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10920113121"}, {"p": 145, "c": "10920113121098", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10920113121"}, {"p": 146, "c": "10420113124014", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 147, "c": "10420113124059", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 148, "c": "10420113124437", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 149, "c": "10420113124723", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 150, "c": "10420113124729", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 151, "c": "10420211014665", "r": "A", "rn": "مقاس A", "m": "نص كم عادي", "mc": "02", "rc": "01", "u": "10420211014"}, {"p": 152, "c": "10420113124049", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10420113124"}, {"p": 153, "c": "10620113121173", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10620113121"}, {"p": 154, "c": "10920113121436", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10920113121"}, {"p": 155, "c": "10920113121727", "r": "K", "rn": "مقاس K", "m": "نص كم مطرز", "mc": "01", "rc": "12", "u": "10920113121"}, {"p": 156, "c": "10120213124050", "r": "K", "rn": "مقاس K", "m": "نص كم عادي", "mc": "02", "rc": "12", "u": "10120213124"}]</script>
+<script>
+(function(){
+  document.documentElement.setAttribute('dir','rtl');
+  var ITEMS = JSON.parse(document.getElementById('data').textContent);
+
+  var grid = document.getElementById('grid');
+  var empty = document.getElementById('empty');
+  var countEl = document.getElementById('count');
+  var q = document.getElementById('q');
+  var clearBtn = document.getElementById('clear');
+  var chipsEl = document.getElementById('chips');
+
+  var AR = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+            '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+  function digits(s){ return s.replace(/[٠-٩۰-۹]/g, function(d){return AR[d];}).replace(/\D+/g,''); }
+  function norm(s){ return s.replace(/[٠-٩۰-۹]/g, function(d){return AR[d];})
+                            .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
+                            .replace(/\s+/g,' ').trim().toLowerCase(); }
+
+  ITEMS.forEach(function(it){ it._t = norm(it.r + ' ' + it.rn + ' ' + it.m); });
+
+  /* ---- ratio chips ---- */
+  var counts = {};
+  ITEMS.forEach(function(it){ counts[it.r] = (counts[it.r]||0)+1; });
+  var ratios = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a] || a.localeCompare(b); });
+  var active = null;
+
+  function chip(label, value, n){
+    var b = document.createElement('button');
+    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed', String(active===value));
+    b.innerHTML = label + (n!=null ? ' <span class="n">'+n+'</span>' : '');
+    b.addEventListener('click', function(){
+      active = (active===value) ? null : value;
+      buildChips(); render();
+    });
+    return b;
+  }
+  function buildChips(){
+    chipsEl.textContent='';
+    chipsEl.appendChild(chip('الكل', null, ITEMS.length));
+    ratios.forEach(function(r){ chipsEl.appendChild(chip(r, r, counts[r])); });
+  }
+
+  /* ---- filtering ---- */
+  var shown = [];
+  function filtered(){
+    var raw = q.value.trim();
+    var d = digits(raw);
+    var t = norm(raw);
+    return ITEMS.filter(function(it){
+      if (active && it.r !== active) return false;
+      if (!raw) return true;
+      if (d && it.c.indexOf(d) !== -1) return true;
+      if (d && String(it.p) === d) return true;
+      if (t && it._t.indexOf(t) !== -1) return true;
+      return false;
+    });
+  }
+
+  function card(it){
+    var b = document.createElement('button');
+    b.type='button'; b.className='card';
+    b.innerHTML =
+      '<img loading="lazy" decoding="async" src="thumb/'+String(it.p).padStart(3,'0')+'.webp" alt="صنف كود '+it.c+'">' +
+      '<div class="meta">' +
+        '<span class="code">'+it.c+'</span>' +
+        '<div class="metarow"><span class="badge">'+it.r+'</span>' +
+        '<span class="pg num">ص '+it.p+'</span></div>' +
+        '<span class="model">'+it.m+'</span>' +
+      '</div>';
+    b.addEventListener('click', function(){ open(shown.indexOf(it)); });
+    return b;
+  }
+
+  function render(){
+    shown = filtered();
+    grid.textContent='';
+    var frag = document.createDocumentFragment();
+    shown.forEach(function(it){ frag.appendChild(card(it)); });
+    grid.appendChild(frag);
+    empty.hidden = shown.length !== 0;
+    clearBtn.hidden = q.value === '';
+    countEl.innerHTML = shown.length === ITEMS.length
+      ? 'كل الأصناف — <b>'+ITEMS.length+'</b> صنف'
+      : '<b>'+shown.length+'</b> من '+ITEMS.length+' صنف';
+  }
+
+  /* ---- lightbox ---- */
+  var lb=null, idx=-1, lastFocus=null;
+  function open(i){
+    if(i<0) return;
+    idx=i; lastFocus=document.activeElement;
+    if(!lb) buildLb();
+    fill();
+    lb.hidden=false;
+    document.body.style.overflow='hidden';
+    lb.querySelector('.x').focus();
+  }
+  function close(){
+    if(!lb) return;
+    lb.hidden=true; document.body.style.overflow='';
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function step(n){
+    var j = idx + n;
+    if(j<0 || j>=shown.length) return;
+    idx=j; fill();
+  }
+  function buildLb(){
+    lb = document.createElement('div');
+    lb.className='lb'; lb.hidden=true;
+    lb.innerHTML =
+      '<div class="lb-box" role="dialog" aria-modal="true" aria-label="تفاصيل الصنف">' +
+        '<div class="lb-img"><img alt=""></div>' +
+        '<div class="lb-side">' +
+          '<div class="lb-head"><div><p class="lb-title">كود الصنف</p><div class="lb-code"></div></div>' +
+          '<button class="x" type="button" title="إغلاق" aria-label="إغلاق">×</button></div>' +
+          '<dl class="kv">' +
+            '<dt>الريشيو</dt><dd><span class="bigbadge"></span></dd>' +
+            '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>' +
+            '<dt>الموديل</dt><dd class="v-m"></dd>' +
+            '<dt>الكود الموحّد</dt><dd class="v-u num" dir="ltr" style="text-align:left"></dd>' +
+            '<dt>الصفحة</dt><dd class="v-p num"></dd>' +
+          '</dl>' +
+          '<div class="btnrow">' +
+            '<button class="btn primary" data-a="copy" type="button">نسخ الكود</button>' +
+            '<button class="btn" data-a="prev" type="button">السابق</button>' +
+            '<button class="btn" data-a="next" type="button">التالي</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', function(e){ if(e.target===lb) close(); });
+    lb.querySelector('.x').addEventListener('click', close);
+    lb.addEventListener('click', function(e){
+      var a = e.target.getAttribute && e.target.getAttribute('data-a');
+      if(a==='prev') step(-1);
+      if(a==='next') step(1);
+      if(a==='copy') copy(e.target);
+    });
+  }
+  function copy(btn){
+    var it = shown[idx]; if(!it) return;
+    var done = function(){ btn.textContent='تم النسخ ✓'; setTimeout(function(){btn.textContent='نسخ الكود';},1400); };
+    try{
+      navigator.clipboard.writeText(it.c).then(done, function(){ selectCode(); });
+    }catch(e){ selectCode(); }
+  }
+  function selectCode(){
+    var el = lb.querySelector('.lb-code');
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function fill(){
+    var it = shown[idx]; if(!it) return;
+    lb.querySelector('.lb-img img').src = 'full/'+String(it.p).padStart(3,'0')+'.webp';
+    lb.querySelector('.lb-img img').alt = 'صنف كود '+it.c;
+    lb.querySelector('.lb-code').textContent = it.c;
+    lb.querySelector('.bigbadge').textContent = it.r;
+    lb.querySelector('.v-rn').textContent = it.rn;
+    lb.querySelector('.v-m').textContent = it.m;
+    lb.querySelector('.v-u').textContent = it.u;
+    lb.querySelector('.v-p').textContent = it.p;
+    lb.querySelector('[data-a="prev"]').disabled = idx<=0;
+    lb.querySelector('[data-a="next"]').disabled = idx>=shown.length-1;
+  }
+  document.addEventListener('keydown', function(e){
+    if(!lb || lb.hidden) return;
+    if(e.key==='Escape') close();
+    else if(e.key==='ArrowRight') step(-1);
+    else if(e.key==='ArrowLeft') step(1);
+  });
+
+  q.addEventListener('input', render);
+  clearBtn.addEventListener('click', function(){ q.value=''; q.focus(); render(); });
+
+  buildChips();
+  render();
+})();
+</script>
