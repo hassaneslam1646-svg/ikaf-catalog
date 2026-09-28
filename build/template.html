@@ -1,0 +1,424 @@
+<title>كتالوج إكاف بالكود</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Poppins:wght@500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --navy:#242E64;
+  --navy-soft:#2E3A7D;
+  --orange:#FA9223;
+  --bg:#EDEFF6;
+  --surface:#FFFFFF;
+  --surface-2:#F6F7FB;
+  --ink:#171B33;
+  --muted:#6A7089;
+  --line:#D8DCEA;
+  --chip:#FFFFFF;
+  --shadow:0 1px 2px rgba(23,27,51,.06), 0 8px 24px rgba(23,27,51,.07);
+  --bar-ink:#FFFFFF;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --navy:#1A2150;
+    --navy-soft:#242E64;
+    --orange:#FFA33F;
+    --bg:#0E1122;
+    --surface:#191E38;
+    --surface-2:#141930;
+    --ink:#EDEFF8;
+    --muted:#98A0BE;
+    --line:#2A3159;
+    --chip:#1F2544;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.35);
+    --bar-ink:#FFFFFF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --navy:#1A2150;
+  --navy-soft:#242E64;
+  --orange:#FFA33F;
+  --bg:#0E1122;
+  --surface:#191E38;
+  --surface-2:#141930;
+  --ink:#EDEFF8;
+  --muted:#98A0BE;
+  --line:#2A3159;
+  --chip:#1F2544;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.35);
+  --bar-ink:#FFFFFF;
+}
+
+*{box-sizing:border-box}
+body{
+  direction:rtl;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Tajawal","Segoe UI",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  margin:0;
+}
+.num{font-family:"Poppins","Tajawal",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* ---------- header ---------- */
+.bar{
+  position:sticky;
+  top:env(safe-area-inset-top, 0px);
+  z-index:30;
+  background:var(--navy);
+  color:var(--bar-ink);
+  box-shadow:0 6px 20px rgba(23,27,51,.18);
+}
+.bar-in{
+  max-width:1180px;margin:0 auto;
+  padding-block:12px;padding-inline:16px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mark{
+  font-weight:800;font-size:15px;letter-spacing:.02em;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.mark .dash{width:22px;height:3px;background:var(--orange);border-radius:2px;display:inline-block}
+.sub{color:rgba(255,255,255,.62);font-size:12.5px;margin-inline-start:auto}
+
+.searchwrap{position:relative;display:flex;align-items:center}
+.searchwrap svg{position:absolute;inset-inline-start:14px;width:18px;height:18px;opacity:.55;pointer-events:none}
+#q{
+  width:100%;
+  padding:13px 44px 13px 44px;
+  border:1.5px solid rgba(255,255,255,.18);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  font-family:"Poppins","Tajawal",system-ui,sans-serif;
+  font-size:16px;font-weight:600;letter-spacing:.02em;
+  outline:none;
+}
+#q::placeholder{color:rgba(255,255,255,.55);font-family:"Tajawal",system-ui,sans-serif;font-weight:400;letter-spacing:0}
+#q:focus{border-color:var(--orange);background:rgba(255,255,255,.16)}
+#clear{
+  position:absolute;inset-inline-end:8px;
+  border:0;background:rgba(255,255,255,.14);color:#fff;
+  width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;
+}
+#clear:hover{background:rgba(255,255,255,.26)}
+
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.chip{
+  flex:0 0 auto;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.86);
+  border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;
+  font-family:"Poppins","Tajawal",system-ui,sans-serif;font-weight:600;
+  white-space:nowrap;
+}
+.chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#231400}
+.chip .n{opacity:.6;font-size:11px;margin-inline-start:4px}
+
+/* ---------- body ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
+.count{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.count b{color:var(--ink);font-family:"Poppins",sans-serif}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:12px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  cursor:pointer;
+  text-align:start;
+  padding:0;
+  font:inherit;
+  color:inherit;
+  display:flex;flex-direction:column;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover,.card:focus-visible{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--orange);outline:none}
+.card img{display:block;width:100%;aspect-ratio:66/100;object-fit:cover;background:var(--surface-2)}
+.meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:5px}
+.code{
+  font-family:"Poppins",monospace;font-weight:600;font-size:12.5px;
+  letter-spacing:.01em;color:var(--ink);direction:ltr;text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+.metarow{display:flex;align-items:center;gap:6px}
+.badge{
+  background:var(--orange);color:#231400;
+  font-family:"Poppins",sans-serif;font-weight:700;font-size:11.5px;
+  padding:2px 7px;border-radius:6px;letter-spacing:.02em;
+}
+.pg{color:var(--muted);font-size:11.5px;margin-inline-start:auto}
+.model{color:var(--muted);font-size:12px;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+
+.empty{
+  background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
+  padding:40px 20px;text-align:center;color:var(--muted);
+}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+
+.foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+
+/* ---------- lightbox ---------- */
+.lb{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(8,10,22,.82);
+  backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+}
+.lb-box{
+  background:var(--surface);border-radius:16px;overflow:hidden;
+  width:min(920px,100%);max-height:100%;
+  display:flex;flex-direction:row-reverse;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.lb-img{flex:1 1 52%;background:var(--navy);display:flex;align-items:center;justify-content:center;min-width:0}
+.lb-img img{width:100%;height:100%;max-height:78vh;object-fit:contain;display:block}
+.lb-side{flex:1 1 48%;padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.lb-head{display:flex;align-items:flex-start;gap:10px}
+.lb-title{font-size:12.5px;color:var(--muted);margin:0 0 2px}
+.lb-code{font-family:"Poppins",monospace;font-weight:700;font-size:20px;direction:ltr;text-align:left;letter-spacing:.01em;word-break:break-all}
+.x{margin-inline-start:auto;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+   width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:18px;line-height:1;flex:0 0 auto}
+.x:hover{border-color:var(--orange)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;align-items:baseline}
+.kv dt{color:var(--muted);font-size:13px}
+.kv dd{margin:0}
+.bigbadge{background:var(--orange);color:#231400;font-family:"Poppins",sans-serif;font-weight:700;
+  font-size:15px;padding:3px 10px;border-radius:8px;display:inline-block}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.btn{
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  border-radius:10px;padding:9px 13px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;
+}
+.btn:hover{border-color:var(--orange)}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#231400;font-weight:700}
+@media (max-width:640px){
+  .lb-box{flex-direction:column;overflow-y:auto}
+  .lb-img img{max-height:46vh}
+  .lb-side{padding:16px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brandrow">
+      <span class="mark"><span class="dash"></span>كتالوج إكاف — تحديث الكميات ٧-٩-٢٠٢٦</span>
+      <span class="sub num">155 صنف</span>
+    </div>
+    <div class="searchwrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="q" type="search" inputmode="search" autocomplete="off" spellcheck="false"
+             placeholder="اكتب الكود أو جزء منه… مثال: 10420211024660">
+      <button id="clear" type="button" title="مسح" hidden>×</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    <b>مفيش كود مطابق</b>
+    جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).
+  </div>
+  <p class="foot">
+    الأكواد والريشيو مأخوذين من ملف «تحديث الكميات بتاريخ ٧-٩-٢٠٢٦» بعد إضافة الريشيو من شجرة أكواد الجلابية ٢٢-٨-٢٠٢٦.
+    البحث بيشتغل بالكود الكامل (١٤ رقم) أو بالكود الموحّد (١١ رقم) أو بأي جزء منهم.
+  </p>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function(){
+  document.documentElement.setAttribute('dir','rtl');
+  var ITEMS = JSON.parse(document.getElementById('data').textContent);
+
+  var grid = document.getElementById('grid');
+  var empty = document.getElementById('empty');
+  var countEl = document.getElementById('count');
+  var q = document.getElementById('q');
+  var clearBtn = document.getElementById('clear');
+  var chipsEl = document.getElementById('chips');
+
+  var AR = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+            '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+  function digits(s){ return s.replace(/[٠-٩۰-۹]/g, function(d){return AR[d];}).replace(/\D+/g,''); }
+  function norm(s){ return s.replace(/[٠-٩۰-۹]/g, function(d){return AR[d];})
+                            .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
+                            .replace(/\s+/g,' ').trim().toLowerCase(); }
+
+  ITEMS.forEach(function(it){ it._t = norm(it.r + ' ' + it.rn + ' ' + it.m); });
+
+  /* ---- ratio chips ---- */
+  var counts = {};
+  ITEMS.forEach(function(it){ counts[it.r] = (counts[it.r]||0)+1; });
+  var ratios = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a] || a.localeCompare(b); });
+  var active = null;
+
+  function chip(label, value, n){
+    var b = document.createElement('button');
+    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed', String(active===value));
+    b.innerHTML = label + (n!=null ? ' <span class="n">'+n+'</span>' : '');
+    b.addEventListener('click', function(){
+      active = (active===value) ? null : value;
+      buildChips(); render();
+    });
+    return b;
+  }
+  function buildChips(){
+    chipsEl.textContent='';
+    chipsEl.appendChild(chip('الكل', null, ITEMS.length));
+    ratios.forEach(function(r){ chipsEl.appendChild(chip(r, r, counts[r])); });
+  }
+
+  /* ---- filtering ---- */
+  var shown = [];
+  function filtered(){
+    var raw = q.value.trim();
+    var d = digits(raw);
+    var t = norm(raw);
+    return ITEMS.filter(function(it){
+      if (active && it.r !== active) return false;
+      if (!raw) return true;
+      if (d && it.c.indexOf(d) !== -1) return true;
+      if (d && String(it.p) === d) return true;
+      if (t && it._t.indexOf(t) !== -1) return true;
+      return false;
+    });
+  }
+
+  function card(it){
+    var b = document.createElement('button');
+    b.type='button'; b.className='card';
+    b.innerHTML =
+      '<img loading="lazy" decoding="async" src="thumb/'+String(it.p).padStart(3,'0')+'.webp" alt="صنف كود '+it.c+'">' +
+      '<div class="meta">' +
+        '<span class="code">'+it.c+'</span>' +
+        '<div class="metarow"><span class="badge">'+it.r+'</span>' +
+        '<span class="pg num">ص '+it.p+'</span></div>' +
+        '<span class="model">'+it.m+'</span>' +
+      '</div>';
+    b.addEventListener('click', function(){ open(shown.indexOf(it)); });
+    return b;
+  }
+
+  function render(){
+    shown = filtered();
+    grid.textContent='';
+    var frag = document.createDocumentFragment();
+    shown.forEach(function(it){ frag.appendChild(card(it)); });
+    grid.appendChild(frag);
+    empty.hidden = shown.length !== 0;
+    clearBtn.hidden = q.value === '';
+    countEl.innerHTML = shown.length === ITEMS.length
+      ? 'كل الأصناف — <b>'+ITEMS.length+'</b> صنف'
+      : '<b>'+shown.length+'</b> من '+ITEMS.length+' صنف';
+  }
+
+  /* ---- lightbox ---- */
+  var lb=null, idx=-1, lastFocus=null;
+  function open(i){
+    if(i<0) return;
+    idx=i; lastFocus=document.activeElement;
+    if(!lb) buildLb();
+    fill();
+    lb.hidden=false;
+    document.body.style.overflow='hidden';
+    lb.querySelector('.x').focus();
+  }
+  function close(){
+    if(!lb) return;
+    lb.hidden=true; document.body.style.overflow='';
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function step(n){
+    var j = idx + n;
+    if(j<0 || j>=shown.length) return;
+    idx=j; fill();
+  }
+  function buildLb(){
+    lb = document.createElement('div');
+    lb.className='lb'; lb.hidden=true;
+    lb.innerHTML =
+      '<div class="lb-box" role="dialog" aria-modal="true" aria-label="تفاصيل الصنف">' +
+        '<div class="lb-img"><img alt=""></div>' +
+        '<div class="lb-side">' +
+          '<div class="lb-head"><div><p class="lb-title">كود الصنف</p><div class="lb-code"></div></div>' +
+          '<button class="x" type="button" title="إغلاق" aria-label="إغلاق">×</button></div>' +
+          '<dl class="kv">' +
+            '<dt>الريشيو</dt><dd><span class="bigbadge"></span></dd>' +
+            '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>' +
+            '<dt>الموديل</dt><dd class="v-m"></dd>' +
+            '<dt>الكود الموحّد</dt><dd class="v-u num" dir="ltr" style="text-align:left"></dd>' +
+            '<dt>الصفحة</dt><dd class="v-p num"></dd>' +
+          '</dl>' +
+          '<div class="btnrow">' +
+            '<button class="btn primary" data-a="copy" type="button">نسخ الكود</button>' +
+            '<button class="btn" data-a="prev" type="button">السابق</button>' +
+            '<button class="btn" data-a="next" type="button">التالي</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', function(e){ if(e.target===lb) close(); });
+    lb.querySelector('.x').addEventListener('click', close);
+    lb.addEventListener('click', function(e){
+      var a = e.target.getAttribute && e.target.getAttribute('data-a');
+      if(a==='prev') step(-1);
+      if(a==='next') step(1);
+      if(a==='copy') copy(e.target);
+    });
+  }
+  function copy(btn){
+    var it = shown[idx]; if(!it) return;
+    var done = function(){ btn.textContent='تم النسخ ✓'; setTimeout(function(){btn.textContent='نسخ الكود';},1400); };
+    try{
+      navigator.clipboard.writeText(it.c).then(done, function(){ selectCode(); });
+    }catch(e){ selectCode(); }
+  }
+  function selectCode(){
+    var el = lb.querySelector('.lb-code');
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function fill(){
+    var it = shown[idx]; if(!it) return;
+    lb.querySelector('.lb-img img').src = 'full/'+String(it.p).padStart(3,'0')+'.webp';
+    lb.querySelector('.lb-img img').alt = 'صنف كود '+it.c;
+    lb.querySelector('.lb-code').textContent = it.c;
+    lb.querySelector('.bigbadge').textContent = it.r;
+    lb.querySelector('.v-rn').textContent = it.rn;
+    lb.querySelector('.v-m').textContent = it.m;
+    lb.querySelector('.v-u').textContent = it.u;
+    lb.querySelector('.v-p').textContent = it.p;
+    lb.querySelector('[data-a="prev"]').disabled = idx<=0;
+    lb.querySelector('[data-a="next"]').disabled = idx>=shown.length-1;
+  }
+  document.addEventListener('keydown', function(e){
+    if(!lb || lb.hidden) return;
+    if(e.key==='Escape') close();
+    else if(e.key==='ArrowRight') step(-1);
+    else if(e.key==='ArrowLeft') step(1);
+  });
+
+  q.addEventListener('input', render);
+  clearBtn.addEventListener('click', function(){ q.value=''; q.focus(); render(); });
+
+  buildChips();
+  render();
+})();
+</script>
