@@ -95,7 +95,14 @@ img{max-width:100%}
 .lb-box{background:var(--surface);border-radius:16px;overflow:hidden;width:min(920px,100%);
   max-height:100%;display:flex;flex-direction:row-reverse;box-shadow:0 30px 80px rgba(0,0,0,.5)}
 .lb-img{flex:1 1 52%;background:var(--navy);display:flex;align-items:center;justify-content:center;min-width:0}
+.lb-img{position:relative}
 .lb-img img{width:100%;height:100%;max-height:78vh;object-fit:contain;display:block}
+.gnav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:999px;border:0;
+  background:rgba(255,255,255,.88);color:#171B33;font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gnav.prev{inset-inline-start:10px}.gnav.next{inset-inline-end:10px}
+.gcount{position:absolute;bottom:10px;inset-inline-start:50%;transform:translateX(50%);background:rgba(8,10,22,.7);color:#fff;
+  font-family:var(--num);font-size:12px;padding:3px 10px;border-radius:999px}
+.pics{background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-size:11.5px;padding:2px 7px;border-radius:6px;white-space:nowrap}
 .lb-side{flex:1 1 48%;padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 .lb-head{display:flex;align-items:flex-start;gap:10px}
 .lb-title{font-size:12.5px;color:var(--muted);margin:0 0 2px}
@@ -166,6 +173,7 @@ img{max-width:100%}
   document.getElementById('total').textContent = ITEMS.length + ' صنف';
   document.getElementById('foot').textContent =
     'المصدر: ' + SRC + '. الريشيو متحسّب من شجرة أكواد الجلابية. '
+    + 'الكميات من عمود المستودعات الرئيسية في تقرير المخزون. '
     + 'البحث بيشتغل بالكود الكامل (14 رقم) أو الموحّد (11 رقم) أو أي جزء منهم.';
 
   var AR={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -205,14 +213,24 @@ img{max-width:100%}
   }
 
   function pad(n){ return String(n).padStart(3,'0'); }
+  function pics(it){
+    var a = it.p!=null ? ['full/'+pad(it.p)+'.webp'] : [];
+    (it.g||[]).forEach(function(g){ a.push('photos/full/'+g+'.webp'); });
+    return a;
+  }
+  function thumbSrc(it){
+    return it.p!=null ? 'thumb/'+pad(it.p)+'.webp' : 'photos/thumb/'+it.g[0]+'.webp';
+  }
 
   function card(it){
     var b=document.createElement('button');
     b.type='button'; b.className='card';
     var qtyHtml = (it.q==null) ? '' : '<span class="qty">الكمية <b>'+it.q+'</b></span>';
-    b.innerHTML='<img loading="lazy" decoding="async" src="thumb/'+pad(it.p)+'.webp" alt="صنف كود '+it.c+'">'+
+    var n=pics(it).length;
+    var picsHtml = n>1 ? '<span class="pics">'+n+' صور</span>' : '';
+    b.innerHTML='<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">'+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
-      '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+'</span>'+
+      '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+it.m+'</span></span>';
     b.addEventListener('click',function(){ open(shown.indexOf(it)); });
     return b;
@@ -250,11 +268,25 @@ img{max-width:100%}
     if(lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function step(n){ var j=idx+n; if(j<0||j>=shown.length) return; idx=j; fill(); }
+  var gi=0;
+  function showPic(){
+    var it=shown[idx]; if(!it) return;
+    var a=pics(it), im=lb.querySelector('.lb-img img');
+    im.src=a[gi]; im.alt='صنف كود '+it.c+' — صورة '+(gi+1);
+    var multi=a.length>1;
+    lb.querySelector('.gnav.prev').hidden = !multi || gi<=0;
+    lb.querySelector('.gnav.next').hidden = !multi || gi>=a.length-1;
+    var c=lb.querySelector('.gcount'); c.hidden=!multi; c.textContent=(gi+1)+' / '+a.length;
+  }
+  function gstep(n){ var a=pics(shown[idx]); var j=gi+n; if(j<0||j>=a.length) return; gi=j; showPic(); }
 
   function buildLb(){
     lb=document.createElement('div'); lb.className='lb'; lb.hidden=true;
     lb.innerHTML='<div class="lb-box" role="dialog" aria-modal="true" aria-label="تفاصيل الصنف">'+
-      '<div class="lb-img"><img alt=""></div><div class="lb-side">'+
+      '<div class="lb-img"><img alt="">'+
+      '<button class="gnav prev" type="button" data-a="gprev" aria-label="الصورة السابقة">&#8250;</button>'+
+      '<button class="gnav next" type="button" data-a="gnext" aria-label="الصورة التالية">&#8249;</button>'+
+      '<span class="gcount" dir="ltr"></span></div><div class="lb-side">'+
       '<div class="lb-head"><div><p class="lb-title">كود الصنف</p><div class="lb-code"></div></div>'+
       '<button class="x" type="button" data-a="close" aria-label="إغلاق">×</button></div>'+
       '<dl class="kv">'+
@@ -263,7 +295,7 @@ img{max-width:100%}
       '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>'+
       '<dt>الموديل</dt><dd class="v-m"></dd>'+
       '<dt>الكود الموحّد</dt><dd class="v-u n" dir="ltr" style="text-align:left"></dd>'+
-      '<dt>الصفحة</dt><dd class="v-p n"></dd></dl>'+
+      '<dt class="k-p">الصفحة</dt><dd class="v-p n"></dd></dl>'+
       '<div class="btnrow"><button class="btn primary" data-a="copy" type="button">نسخ الكود</button>'+
       '<button class="btn" data-a="prev" type="button">السابق</button>'+
       '<button class="btn" data-a="next" type="button">التالي</button></div></div></div>';
@@ -278,6 +310,8 @@ img{max-width:100%}
       else if(a==='prev') step(-1);
       else if(a==='next') step(1);
       else if(a==='copy') copy(el);
+      else if(a==='gprev') gstep(-1);
+      else if(a==='gnext') gstep(1);
     });
   }
 
@@ -297,8 +331,7 @@ img{max-width:100%}
 
   function fill(){
     var it=shown[idx]; if(!it) return;
-    var im=lb.querySelector('.lb-img img');
-    im.src='full/'+pad(it.p)+'.webp'; im.alt='صنف كود '+it.c;
+    gi=0; showPic();
     lb.querySelector('.lb-code').textContent=it.c;
     lb.querySelector('.bigbadge').textContent=it.r;
     lb.querySelector('.v-q').textContent = (it.q==null ? '—' : it.q);
@@ -306,6 +339,7 @@ img{max-width:100%}
     lb.querySelector('.v-m').textContent=it.m;
     lb.querySelector('.v-u').textContent=it.u;
     lb.querySelector('.v-p').textContent=it.p;
+    lb.querySelector('.v-p').hidden = lb.querySelector('.k-p').hidden = (it.p==null);
     lb.querySelector('[data-a="prev"]').disabled = idx<=0;
     lb.querySelector('[data-a="next"]').disabled = idx>=shown.length-1;
   }
