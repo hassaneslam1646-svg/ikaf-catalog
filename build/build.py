@@ -162,13 +162,93 @@ def has_band(im):
     return int(((r > 200) & (g > 100) & (g < 200) & (b < 120)).sum()) > 500
 
 
+def _label_region(im):
+    w, h = im.size
+    return (int(BAND[2] * w), int(BAND[1] * h) - int(0.006 * h),
+            int(0.988 * w), int(BAND[3] * h) + int(0.006 * h))
+
+
+def _label_bbox(im):
+    """مكان النص الأبيض (الريشيو) المكتوب بعد الشريط، أو None."""
+    x0, y0, x1, y1 = _label_region(im)
+    a = np.asarray(im.convert("RGB").crop((x0, y0, x1, y1)))
+    m = (a[:, :, 0] > 200) & (a[:, :, 1] > 200) & (a[:, :, 2] > 200)
+    ys, xs = np.nonzero(m)
+    if len(ys) < 200:
+        return None
+    return (x0 + xs.min(), y0 + ys.min(), x0 + xs.max() + 1, y0 + ys.max() + 1)
+
+
 def has_label(im):
     """هل الريشيو مكتوب على الصفحة بعد الشريط البرتقالي؟"""
-    w, h = im.size
-    c = im.convert("RGB").crop((int(BAND[2] * w), int(BAND[1] * h),
-                                int(0.99 * w), int(BAND[3] * h)))
-    a = np.asarray(c)
-    return int(((a[:, :, 0] > 200) & (a[:, :, 1] > 200) & (a[:, :, 2] > 200)).sum()) > 200
+    return _label_bbox(im) is not None
+
+
+def _text_mask(text, font_size):
+    f = ImageFont.truetype(font_path(), font_size)
+    pad = font_size
+    im = Image.new("L", (int(font_size * len(text) * 1.6) + pad * 2, font_size * 3), 0)
+    ImageDraw.Draw(im).text((pad, pad), text, font=f, fill=255)
+    a = np.asarray(im) > 127
+    ys, xs = np.nonzero(a)
+    if len(ys) == 0:
+        return None
+    return a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+
+
+def _iou_resized(a, b):
+    ta = Image.fromarray((a * 255).astype(np.uint8)).resize((120, 60), Image.LANCZOS)
+    tb = Image.fromarray((b * 255).astype(np.uint8)).resize((120, 60), Image.LANCZOS)
+    na, nb = np.asarray(ta) > 127, np.asarray(tb) > 127
+    union = np.logical_or(na, nb).sum()
+    return np.logical_and(na, nb).sum() / union if union else 0.0
+
+
+def label_clearly_differs(im, text):
+    """
+    هل المطبوع على الصفحة مختلف عن المحسوب اختلاف واضح؟
+
+    بنقارن نسبة العرض للارتفاع، فبتكشف اختلاف الطول (F مقابل F26، SP مقابل
+    SPECIAL). اختلاف بنفس عدد الحروف (B26 مقابل B24) مش بيتكشف بالطريقة دي —
+    وده مش مشكلة، لأننا بنعيد كتابة الريشيو على كل صفحة من الكود على أي حال،
+    فالمطبوع بيتطابق مع الكود دايمًا. المقارنة دي للتقرير بس.
+    """
+    bb = _label_bbox(im)
+    if bb is None:
+        return True
+    a = np.asarray(im.convert("RGB").crop(bb))
+    printed = (a[:, :, 0] > 200) & (a[:, :, 1] > 200) & (a[:, :, 2] > 200)
+    want = _text_mask(text, max(20, (bb[3] - bb[1]) * 2))
+    if want is None:
+        return True
+    r_printed = printed.shape[1] / printed.shape[0]
+    r_want = want.shape[1] / want.shape[0]
+    return abs(r_printed - r_want) > 0.25 * max(r_printed, r_want)
+
+
+def repaint_label(im, text):
+    """يمسح الريشيو المطبوع ويكتب المحسوب مكانه بنفس الخط والمكان."""
+    im = im.convert("RGB")
+    bb = _label_bbox(im)
+    rx0, ry0, rx1, ry1 = _label_region(im)
+    a = np.asarray(im.crop((rx0, ry0, rx1, ry1))).reshape(-1, 3)
+    dark = a[a.sum(1) < 400]
+    bg = tuple(int(v) for v in (np.median(dark, axis=0) if len(dark) else [36, 46, 100]))
+
+    draw = ImageDraw.Draw(im)
+    draw.rectangle((rx0, ry0, rx1, ry1), fill=bg)
+
+    cap = (bb[3] - bb[1]) if bb else int((ry1 - ry0) * 0.55)
+    size = max(12, int(cap * 1.40))
+    x = bb[0] if bb else rx0 + int((rx1 - rx0) * 0.05)
+    f = ImageFont.truetype(font_path(), size)
+    while draw.textlength(text, font=f) > (rx1 - x) and size > 12:
+        size -= 1
+        f = ImageFont.truetype(font_path(), size)
+    box = draw.textbbox((0, 0), text, font=f)
+    cy = (ry0 + ry1) // 2
+    draw.text((x - box[0], cy - (box[1] + box[3]) // 2), text, font=f, fill=(255, 255, 255))
+    return im
 
 
 def read_code(im, tmp):
@@ -324,8 +404,7 @@ def write_labels(src_pdf, labels, dest):
 # ---------------------------------------------------------------------------
 # 4) صور الموقع
 # ---------------------------------------------------------------------------
-def build_images(labeled_pdf, pages_wanted, workdir):
-    raster = rasterize(labeled_pdf, os.path.join(workdir, "labeled"))
+def build_images(raster, pages_wanted):
     for folder in ("thumb", "full"):
         d = os.path.join(ROOT, folder)
         shutil.rmtree(d, ignore_errors=True)
@@ -449,8 +528,11 @@ def main():
                 continue
             label = rl + (wl or "")
             labels[page] = label
-            if pre_labeled and not has_label(im):
-                nolabel.append((page, code, label))
+            if pre_labeled:
+                if label_clearly_differs(im, label):
+                    nolabel.append((page, code, label,
+                                    "مفيش" if not has_label(im) else "مختلف"))
+                repaint_label(im, label).save(pages[page], quality=92)
             qty = read_quantity(im)
             if qty is None:
                 noqty.append((page, code))
@@ -468,21 +550,22 @@ def main():
             for page, code, rc, mc in unknown:
                 log(f"   صفحة {page} — {code} — ريشيو {rc} / موديل {mc}")
         if nolabel:
-            log("!! صفحات الريشيو مش مكتوب عليها (رغم ‎--labeled‎):")
-            for page, code, lbl in nolabel:
-                log(f"   صفحة {page} — {code} — المفروض يتكتب {lbl}")
-        if unread or unknown or nolabel:
+            log(f"مطبوع مختلف عن المحسوب في {len(nolabel)} صفحة (اتصحّحت):")
+            for page, code, lbl, state in nolabel:
+                log(f"   صفحة {page} — {code} — المطبوع {state} → اتكتب {lbl}")
+        if unread or unknown:
             log("راجع الحالات دي قبل النشر.")
 
         if pre_labeled:
-            source_pdf = pdf
-            log("‎--labeled‎: الريشيو مكتوب على الكتالوج أصلًا، فمتكتبش تاني.")
+            log("‎--labeled‎: الريشيو اتكتب من جديد على كل صفحة من الكود.")
+            raster = pages
         else:
-            source_pdf = os.path.join(ROOT, "out", "labeled.pdf")
-            write_labels(pdf, labels, source_pdf)
-            log(f"اتكتب: {source_pdf}")
+            labeled = os.path.join(ROOT, "out", "labeled.pdf")
+            write_labels(pdf, labels, labeled)
+            log(f"اتكتب: {labeled}")
+            raster = rasterize(labeled, os.path.join(workdir, "labeled"))
 
-        build_images(source_pdf, [it["p"] for it in items], workdir)
+        build_images(raster, [it["p"] for it in items])
         write_page(items, os.path.splitext(os.path.basename(pdf))[0])
         write_review(items, os.path.join(ROOT, "out", "review.xlsx"))
         log("اتكتب: index.html + thumb/ + full/ + out/review.xlsx")
