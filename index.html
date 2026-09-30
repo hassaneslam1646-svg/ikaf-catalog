@@ -178,7 +178,7 @@ img{max-width:100%}
   document.getElementById('foot').textContent =
     'المصدر: ' + SRC + '. الريشيو متحسّب من شجرة أكواد الجلابية. '
     + 'الكميات من عمود المستودعات الرئيسية في تقرير المخزون. '
-    + 'البحث بيشتغل بالكود الكامل (14 رقم) أو الموحّد (11 رقم) أو أي جزء منهم.';
+    + 'البحث بيشتغل بالكود الكامل (14 رقم) أو أي جزء منهم.';
 
   var AR={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
           '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
@@ -322,7 +322,6 @@ img{max-width:100%}
       '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>'+
       '<dt>الموديل</dt><dd class="v-m"></dd>'+
       '<dt class="k-k">الخامة</dt><dd class="v-k"></dd>'+
-      '<dt>الكود الموحّد</dt><dd class="v-u n" dir="ltr" style="text-align:left"></dd>'+
       '<dt class="k-p">الصفحة</dt><dd class="v-p n"></dd></dl>'+
       '<div class="btnrow"><button class="btn primary" data-a="copy" type="button">نسخ الكود</button>'+
       '<button class="btn" data-a="prev" type="button">السابق</button>'+
@@ -367,7 +366,6 @@ img{max-width:100%}
     lb.querySelector('.v-m').textContent=it.m;
     lb.querySelector('.v-k').textContent=it.k;
     lb.querySelector('.v-k').hidden = lb.querySelector('.k-k').hidden = !it.k;
-    lb.querySelector('.v-u').textContent=it.u;
     lb.querySelector('.v-p').textContent=it.p;
     lb.querySelector('.v-p').hidden = lb.querySelector('.k-p').hidden = (it.p==null);
     lb.querySelector('[data-a="prev"]').disabled = idx<=0;
