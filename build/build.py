@@ -32,7 +32,8 @@ import tempfile
 
 import numpy as np
 import openpyxl
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+from scipy import ndimage
 from pypdf import PdfReader, PdfWriter
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -43,6 +44,7 @@ from reportlab.pdfgen import canvas
 # ---------------------------------------------------------------------------
 BAND = (0.21926, 0.81583, 0.80889, 0.85417)   # الشريط البرتقالي بتاع الكود
 CARD = (0.12267, 0.11500, 0.90044, 0.77900)   # الكارت الأبيض اللي فيه صورة المنتج
+QBAND = (0.020, 0.10, 0.118, 0.95)            # الشريط الجانبي اللي فيه رقم الكمية رأسي
 
 RENDER_DPI = 75          # دقة تحويل الصفحات لصور
 FULL_W, FULL_Q = 600, 70 # الصفحة الكاملة (webp)
@@ -178,15 +180,100 @@ def read_code(im, tmp):
 
 
 # ---------------------------------------------------------------------------
+# 2ب) قراءة رقم الكمية المكتوب رأسي على جنب الصفحة
+#
+# tesseract بيغلط في الأرقام دي (خط عريض، رقمين أو تلاتة، مقلوبة 90 درجة)،
+# فبنطابق كل رقم مع قوالب متولّدة من نفس خط الكتالوج — دقة أعلى بكتير.
+# ---------------------------------------------------------------------------
+DIGIT_BOX = (48, 64)
+
+
+def _normalize_glyph(mask):
+    ys, xs = np.nonzero(mask)
+    if len(ys) == 0:
+        return None
+    m = mask[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    im = Image.fromarray((m * 255).astype(np.uint8))
+    tw, th = DIGIT_BOX
+    w = max(1, min(tw, round(im.width * th / im.height)))
+    canvas = Image.new("L", DIGIT_BOX, 0)
+    canvas.paste(im.resize((w, th), Image.LANCZOS), ((tw - w) // 2, 0))
+    return np.asarray(canvas) > 127
+
+
+def _digit_templates(font_path):
+    font = ImageFont.truetype(font_path, 140)
+    out = {}
+    for d in "0123456789":
+        im = Image.new("L", (200, 220), 0)
+        ImageDraw.Draw(im).text((100, 110), d, font=font, fill=255, anchor="mm")
+        t = _normalize_glyph(np.asarray(im) > 127)
+        if t is not None:
+            out[d] = t
+    return out
+
+
+_TEMPLATES = None
+
+
+def _match_digit(mask):
+    best, score = None, -1.0
+    n = _normalize_glyph(mask)
+    if n is None:
+        return None
+    for d, t in _TEMPLATES.items():
+        union = np.logical_or(n, t).sum()
+        s = np.logical_and(n, t).sum() / union if union else 0
+        if s > score:
+            best, score = d, s
+    return best if score >= 0.55 else None
+
+
+def read_quantity(im):
+    """رقم الكمية المكتوب رأسي جنب الصورة، أو None لو مش مقروء."""
+    w, h = im.size
+    c = im.convert("RGB").crop((int(QBAND[0] * w), int(QBAND[1] * h),
+                                int(QBAND[2] * w), int(QBAND[3] * h)))
+    a = np.asarray(c)
+    mask = (a[:, :, 0] > 190) & (a[:, :, 1] > 190) & (a[:, :, 2] > 190)
+    lab, n = ndimage.label(mask)
+    if n == 0:
+        return None
+    H, W = c.height, c.width
+    parts = []
+    for i, sl in enumerate(ndimage.find_objects(lab), start=1):
+        ys, xs = sl
+        if ys.start <= H * 0.5:
+            continue                                  # الأشكال الرمادية فوق
+        hh, ww = ys.stop - ys.start, xs.stop - xs.start
+        if not (0.20 * W <= ww <= 0.60 * W):
+            continue
+        if not (0.002 * H <= hh <= 0.030 * H):
+            continue
+        parts.append((ys.start, np.rot90(lab[sl] == i, k=-1)))
+    if not parts:
+        return None
+    parts.sort(key=lambda p: -p[0])                   # من تحت لفوق = يسار ليمين
+    digits = [_match_digit(m) for _, m in parts]
+    if any(d is None for d in digits):
+        return None
+    return int("".join(digits))
+
+
+# ---------------------------------------------------------------------------
 # 3) كتابة الريشيو على الـPDF
 # ---------------------------------------------------------------------------
-def pick_font():
+def font_path():
     for path in FONT_CANDIDATES:
         p = path if os.path.isabs(path) else os.path.join(ROOT, path)
         if os.path.exists(p):
-            pdfmetrics.registerFont(TTFont("CatalogBold", p))
-            return "CatalogBold"
+            return p
     sys.exit("خط Poppins-Bold مش موجود — حطّه في build/Poppins-Bold.ttf")
+
+
+def pick_font():
+    pdfmetrics.registerFont(TTFont("CatalogBold", font_path()))
+    return "CatalogBold"
 
 
 def write_labels(src_pdf, labels, dest):
@@ -246,14 +333,14 @@ def build_images(labeled_pdf, pages_wanted, workdir):
 # ---------------------------------------------------------------------------
 # 5) الصفحة وجدول المراجعة
 # ---------------------------------------------------------------------------
-def write_page(items):
+def write_page(items, source_name):
     tpl = os.path.join(ROOT, "build", "template.html")
     html = open(tpl, encoding="utf-8").read()
-    if "__DATA__" not in html:
-        sys.exit("قالب الصفحة build/template.html مفيهوش __DATA__")
+    for token in ("__DATA__", "__SOURCE__"):
+        if token not in html:
+            sys.exit(f"قالب الصفحة build/template.html مفيهوش {token}")
     html = html.replace("__DATA__", json.dumps(items, ensure_ascii=False))
-    html = re.sub(r"(<span class=\"sub\">)\s*\d+\s*(صنف</span>)",
-                  rf"\g<1>{len(items)} \g<2>", html)
+    html = html.replace("__SOURCE__", source_name.replace('"', "'"))
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(html)
 
 
@@ -265,7 +352,7 @@ def write_review(items, dest):
     ws = wb.active
     ws.title = "مراجعة الريشيو"
     ws.sheet_view.rightToLeft = True
-    headers = ["رقم الصفحة", "الكود", "الريشيو المكتوب في الـPDF",
+    headers = ["رقم الصفحة", "الكود", "الريشيو المكتوب في الـPDF", "الكمية",
                "كود الريشيو (خانة 9-10)", "اسم الريشيو في الشجرة",
                "كود الموديل (خانة 5-6)", "اسم الموديل في الشجرة", "العرض المستخرج"]
     ws.append(headers)
@@ -277,10 +364,12 @@ def write_review(items, dest):
         c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         c.border = border
 
+    miss = PatternFill("solid", fgColor="FFF2CC")
     for it in items:
         m = re.match(r"^(.*?)(\d{2}(?:/\d{2})?)$", it["r"])
         width = m.group(2) if m and m.group(1) else ""
-        ws.append([it["p"], it["c"], it["r"], it["rc"], it["rn"], it["mc"], it["m"], width])
+        ws.append([it["p"], it["c"], it["r"], it.get("q"), it["rc"], it["rn"],
+                   it["mc"], it["m"], width])
 
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, max_col=len(headers)):
         for c in row:
@@ -289,10 +378,14 @@ def write_review(items, dest):
             c.alignment = Alignment(horizontal="center", vertical="center")
         row[1].number_format = "@"
         row[2].font = Font(name="Arial", size=11, bold=True)
-        row[4].alignment = Alignment(horizontal="right")
-        row[6].alignment = Alignment(horizontal="right")
+        row[3].font = Font(name="Arial", size=11, bold=True)
+        if row[3].value is None:                       # كمية مش مقروءة
+            for c in row:
+                c.fill = miss
+        row[5].alignment = Alignment(horizontal="right")
+        row[7].alignment = Alignment(horizontal="right")
 
-    for i, w in enumerate([12, 20, 22, 20, 22, 20, 42, 14], start=1):
+    for i, w in enumerate([12, 20, 22, 10, 20, 22, 20, 42, 14], start=1):
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{ws.max_row}"
@@ -311,6 +404,9 @@ def main():
     need("pdftoppm")
     need("tesseract")
 
+    global _TEMPLATES
+    _TEMPLATES = _digit_templates(font_path())
+
     models, ratios = load_tree(xlsx)
     log(f"شجرة الأكواد: {len(models)} موديل، {len(ratios)} ريشيو")
 
@@ -320,7 +416,7 @@ def main():
         log(f"عدد الصفحات: {len(pages)}")
 
         tmp_png = os.path.join(workdir, "ocr.png")
-        items, labels, unread, unknown = [], {}, [], []
+        items, labels, unread, unknown, noqty = [], {}, [], [], []
 
         for page in sorted(pages):
             im = Image.open(pages[page])
@@ -337,10 +433,16 @@ def main():
                 continue
             label = rl + (wl or "")
             labels[page] = label
-            items.append({"p": page, "c": code, "r": label, "rn": rn,
+            qty = read_quantity(im)
+            if qty is None:
+                noqty.append((page, code))
+            items.append({"p": page, "c": code, "r": label, "rn": rn, "q": qty,
                           "m": mn, "mc": code[4:6], "rc": code[8:10], "u": code[:11]})
 
         log(f"اتقرا بنجاح: {len(items)} صنف")
+        log(f"الكميات المقروءة: {sum(1 for i in items if i['q'] is not None)} من {len(items)}")
+        if noqty:
+            log(f"!! كمية مش مقروءة في: {[p for p, _ in noqty]}")
         if unread:
             log(f"!! صفحات الكود مش مقروء فيها: {unread}")
         if unknown:
@@ -355,7 +457,7 @@ def main():
         log(f"اتكتب: {labeled}")
 
         build_images(labeled, [it["p"] for it in items], workdir)
-        write_page(items)
+        write_page(items, os.path.splitext(os.path.basename(pdf))[0])
         write_review(items, os.path.join(ROOT, "out", "review.xlsx"))
         log("اتكتب: index.html + thumb/ + full/ + out/review.xlsx")
         log("\nخلص. للنشر:  git add -A && git commit -m 'تحديث الكتالوج' && git push")
