@@ -30,7 +30,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build import ROOT, load_tree, ratio_label, width_label, log  # noqa: E402
 
-MIN_QTY = 20                 # الصنف الجديد لازم رصيده أكبر من كده
+MIN_QTY = 20                 # الصنف الجديد بيظهر لو رصيده 20 أو أكتر
 FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
 STOCK_SHEET = "المخزون"
@@ -168,7 +168,7 @@ def main():
         if q is None:
             missing.append(code)
             continue
-        if q <= MIN_QTY:
+        if q < MIN_QTY:
             low.append((code, q))
             continue
         rl, rn = ratio_label(code[8:10], ratios)
@@ -200,7 +200,7 @@ def main():
         log(f"!! أصناف PDF مش في تقرير المخزون (الكمية بقت 0): {pdf_no_stock}")
     log(f"أصناف جديدة من الصور: {len(added)}")
     if low:
-        log(f"اتسابت (رصيد {MIN_QTY} أو أقل): {low}")
+        log(f"اتسابت (رصيد أقل من {MIN_QTY}): {low}")
     if missing:
         log(f"اتسابت (مش في تقرير المخزون): {missing}")
     if unknown:
