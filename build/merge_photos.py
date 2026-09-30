@@ -89,6 +89,13 @@ def main():
     if len(sys.argv) != 4:
         sys.exit(__doc__)
     photos_dir, stock_xlsx, tree_xlsx = sys.argv[1:]
+    # لو المصدر هو photos/ نفسه (مفيش فولدر الصور الأصلي)، ننسخه الأول لأن photos/ بيتمسح ويتبني من جديد
+    if os.path.abspath(photos_dir).startswith(os.path.join(ROOT, "photos")):
+        import tempfile
+        tmp = tempfile.mkdtemp(prefix="ikaf-photos-")
+        for fn in os.listdir(photos_dir):
+            shutil.copy2(os.path.join(photos_dir, fn), tmp)
+        photos_dir = tmp
 
     models, ratios = load_tree(tree_xlsx)
     stock = load_stock(stock_xlsx)
