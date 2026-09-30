@@ -61,6 +61,9 @@ img{max-width:100%}
   font-family:var(--num);font-weight:600;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#231400}
 .chip .n{opacity:.6;font-size:11px;margin-inline-start:4px}
+.mats .chip{font-family:var(--ar);font-weight:500}
+.mats .chip[aria-pressed="true"]{background:#fff;border-color:#fff;color:var(--navy);font-weight:700}
+.chip[disabled]{opacity:.35;cursor:default}
 
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
 .count{color:var(--muted);font-size:13.5px;margin:0 0 12px}
@@ -147,6 +150,7 @@ img{max-width:100%}
       <button id="clear" type="button" title="مسح" aria-label="مسح البحث" hidden>×</button>
     </div>
     <div class="chips" id="chips"></div>
+    <div class="chips mats" id="mats" hidden></div>
   </div>
 </div>
 
@@ -181,23 +185,45 @@ img{max-width:100%}
   function digits(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];}).replace(/\D+/g,''); }
   function norm(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];})
     .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim().toLowerCase(); }
-  ITEMS.forEach(function(it){ it._t = norm(it.r+' '+it.rn+' '+it.m); });
+  ITEMS.forEach(function(it){ it.k = it.k || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k); });
 
-  var counts={}; ITEMS.forEach(function(it){ counts[it.r]=(counts[it.r]||0)+1; });
-  var ratios=Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a] || a.localeCompare(b); });
-  var active=null;
+  var active=null, mat=null;
+  var matsEl=document.getElementById('mats');
 
-  function chip(label,value,n){
+  function tally(key, other, otherVal){
+    var c={};
+    ITEMS.forEach(function(it){
+      if(otherVal!=null && it[other]!==otherVal) return;
+      if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
+    });
+    return c;
+  }
+  var allR=tally('r'), allK=tally('k');
+  var ratios=Object.keys(allR).sort(function(a,b){ return allR[b]-allR[a] || a.localeCompare(b); });
+  var mats=Object.keys(allK).sort(function(a,b){ return allK[b]-allK[a] || a.localeCompare(b,'ar'); });
+
+  function chip(label,value,n,isMat){
     var b=document.createElement('button');
-    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',String(active===value));
+    var cur=isMat?mat:active;
+    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',String(cur===value));
     b.innerHTML=label+(n!=null?' <span class="n">'+n+'</span>':'');
-    b.addEventListener('click',function(){ active=(active===value)?null:value; buildChips(); render(); });
+    if(value!==null && !n && cur!==value) b.disabled=true;
+    b.addEventListener('click',function(){
+      if(isMat) mat=(mat===value)?null:value; else active=(active===value)?null:value;
+      buildChips(); render();
+    });
     return b;
   }
   function buildChips(){
+    var rc=tally('r','k',mat), kc=tally('k','r',active);
     chipsEl.textContent='';
-    chipsEl.appendChild(chip('الكل',null,ITEMS.length));
-    ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,counts[r])); });
+    chipsEl.appendChild(chip('الكل',null,mat==null?ITEMS.length:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
+    ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,rc[r]||0,false)); });
+    matsEl.textContent='';
+    if(!mats.length){ matsEl.hidden=true; return; }
+    matsEl.hidden=false;
+    matsEl.appendChild(chip('كل الخامات',null,active==null?ITEMS.length:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
+    mats.forEach(function(k){ matsEl.appendChild(chip(k,k,kc[k]||0,true)); });
   }
 
   var shown=[];
@@ -205,6 +231,7 @@ img{max-width:100%}
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
     return ITEMS.filter(function(it){
       if(active && it.r!==active) return false;
+      if(mat && it.k!==mat) return false;
       if(!raw) return true;
       if(d && it.c.indexOf(d)!==-1) return true;
       if(t && it._t.indexOf(t)!==-1) return true;
@@ -294,6 +321,7 @@ img{max-width:100%}
       '<dt>الكمية</dt><dd class="bigqty v-q"></dd>'+
       '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>'+
       '<dt>الموديل</dt><dd class="v-m"></dd>'+
+      '<dt class="k-k">الخامة</dt><dd class="v-k"></dd>'+
       '<dt>الكود الموحّد</dt><dd class="v-u n" dir="ltr" style="text-align:left"></dd>'+
       '<dt class="k-p">الصفحة</dt><dd class="v-p n"></dd></dl>'+
       '<div class="btnrow"><button class="btn primary" data-a="copy" type="button">نسخ الكود</button>'+
@@ -337,6 +365,8 @@ img{max-width:100%}
     lb.querySelector('.v-q').textContent = (it.q==null ? '—' : it.q);
     lb.querySelector('.v-rn').textContent=it.rn;
     lb.querySelector('.v-m').textContent=it.m;
+    lb.querySelector('.v-k').textContent=it.k;
+    lb.querySelector('.v-k').hidden = lb.querySelector('.k-k').hidden = !it.k;
     lb.querySelector('.v-u').textContent=it.u;
     lb.querySelector('.v-p').textContent=it.p;
     lb.querySelector('.v-p').hidden = lb.querySelector('.k-p').hidden = (it.p==null);

@@ -39,6 +39,20 @@ STOCK_COL = "المستودعات الرئيسية"
 NAME_RE = re.compile(r"^(1\d{13})(?:_(\d+))?\.(jpe?g|png|webp)$", re.I)
 
 
+def load_materials(xlsx):
+    """الخامات من شيت ARABIC في الشجرة: العمود C اسم الخامة، D كودها (خانة 2-3 من الكود)."""
+    ws = openpyxl.load_workbook(xlsx, data_only=True)["ARABIC"]
+    out = {}
+    for r in range(4, ws.max_row + 1):
+        name, code = ws[f"C{r}"].value, ws[f"D{r}"].value
+        if name is None or code is None or not str(name).strip():
+            continue
+        code = str(code).strip()
+        if re.fullmatch(r"\d+", code):
+            out[code.zfill(2)] = " ".join(str(name).split())
+    return out
+
+
 def load_stock(xlsx):
     wb = openpyxl.load_workbook(xlsx, data_only=True, read_only=True)
     if STOCK_SHEET not in wb.sheetnames:
@@ -98,6 +112,7 @@ def main():
         photos_dir = tmp
 
     models, ratios = load_tree(tree_xlsx)
+    materials = load_materials(tree_xlsx)
     stock = load_stock(stock_xlsx)
     log(f"تقرير المخزون: {len(stock)} كود")
 
@@ -165,6 +180,13 @@ def main():
                       "q": fmt_qty(q), "m": mn, "mc": code[4:6], "rc": code[8:10],
                       "u": code[:11], "s": "photo", "g": gallery(code)})
         added.append(code)
+
+    # الخامة لكل صنف (خانة 2-3) — للفلتر في الصفحة
+    nomat = sorted({it["c"][1:3] for it in items if it["c"][1:3] not in materials})
+    for it in items:
+        it["k"] = materials.get(it["c"][1:3], "")
+    if nomat:
+        log(f"!! أكواد خامة مش في الشجرة: {nomat}")
 
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
