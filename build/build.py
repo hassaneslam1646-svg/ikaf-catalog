@@ -16,6 +16,10 @@
 التشغيل:
   python3 build/build.py "كتالوج.pdf" "شجرة الاكواد.xlsx"
 
+لو الكتالوج جاي والريشيو مكتوب عليه أصلًا، ضيف ‎--labeled‎ عشان السكريبت
+ما يكتبوش تاني فوقه (بيستخدم الـPDF زي ما هو، وبيتأكد إن كل صفحة عليها ريشيو):
+  python3 build/build.py "كتالوج.pdf" "شجرة الاكواد.xlsx" --labeled
+
 المتطلبات:
   apt: poppler-utils  tesseract-ocr
   pip: pillow numpy openpyxl pypdf reportlab
@@ -156,6 +160,15 @@ def has_band(im):
     sub = a[int(h * 0.70):int(h * 0.92)]
     r, g, b = sub[:, :, 0].astype(int), sub[:, :, 1].astype(int), sub[:, :, 2].astype(int)
     return int(((r > 200) & (g > 100) & (g < 200) & (b < 120)).sum()) > 500
+
+
+def has_label(im):
+    """هل الريشيو مكتوب على الصفحة بعد الشريط البرتقالي؟"""
+    w, h = im.size
+    c = im.convert("RGB").crop((int(BAND[2] * w), int(BAND[1] * h),
+                                int(0.99 * w), int(BAND[3] * h)))
+    a = np.asarray(c)
+    return int(((a[:, :, 0] > 200) & (a[:, :, 1] > 200) & (a[:, :, 2] > 200)).sum()) > 200
 
 
 def read_code(im, tmp):
@@ -395,9 +408,12 @@ def write_review(items, dest):
 
 # ---------------------------------------------------------------------------
 def main():
-    if len(sys.argv) != 3:
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    flags = {a for a in sys.argv[1:] if a.startswith("--")}
+    if len(args) != 2 or flags - {"--labeled"}:
         sys.exit(__doc__)
-    pdf, xlsx = sys.argv[1], sys.argv[2]
+    pdf, xlsx = args
+    pre_labeled = "--labeled" in flags
     for p in (pdf, xlsx):
         if not os.path.exists(p):
             sys.exit(f"الملف مش موجود: {p}")
@@ -416,7 +432,7 @@ def main():
         log(f"عدد الصفحات: {len(pages)}")
 
         tmp_png = os.path.join(workdir, "ocr.png")
-        items, labels, unread, unknown, noqty = [], {}, [], [], []
+        items, labels, unread, unknown, noqty, nolabel = [], {}, [], [], [], []
 
         for page in sorted(pages):
             im = Image.open(pages[page])
@@ -433,6 +449,8 @@ def main():
                 continue
             label = rl + (wl or "")
             labels[page] = label
+            if pre_labeled and not has_label(im):
+                nolabel.append((page, code, label))
             qty = read_quantity(im)
             if qty is None:
                 noqty.append((page, code))
@@ -449,14 +467,22 @@ def main():
             log("!! أكواد مش موجودة في الشجرة (اتسابت من غير ريشيو):")
             for page, code, rc, mc in unknown:
                 log(f"   صفحة {page} — {code} — ريشيو {rc} / موديل {mc}")
-        if unread or unknown:
+        if nolabel:
+            log("!! صفحات الريشيو مش مكتوب عليها (رغم ‎--labeled‎):")
+            for page, code, lbl in nolabel:
+                log(f"   صفحة {page} — {code} — المفروض يتكتب {lbl}")
+        if unread or unknown or nolabel:
             log("راجع الحالات دي قبل النشر.")
 
-        labeled = os.path.join(ROOT, "out", "labeled.pdf")
-        write_labels(pdf, labels, labeled)
-        log(f"اتكتب: {labeled}")
+        if pre_labeled:
+            source_pdf = pdf
+            log("‎--labeled‎: الريشيو مكتوب على الكتالوج أصلًا، فمتكتبش تاني.")
+        else:
+            source_pdf = os.path.join(ROOT, "out", "labeled.pdf")
+            write_labels(pdf, labels, source_pdf)
+            log(f"اتكتب: {source_pdf}")
 
-        build_images(labeled, [it["p"] for it in items], workdir)
+        build_images(source_pdf, [it["p"] for it in items], workdir)
         write_page(items, os.path.splitext(os.path.basename(pdf))[0])
         write_review(items, os.path.join(ROOT, "out", "review.xlsx"))
         log("اتكتب: index.html + thumb/ + full/ + out/review.xlsx")
