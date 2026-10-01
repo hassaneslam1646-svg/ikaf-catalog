@@ -433,6 +433,10 @@ def write_page(items, source_name):
             sys.exit(f"قالب الصفحة build/template.html مفيهوش {token}")
     html = html.replace("__DATA__", json.dumps(items, ensure_ascii=False))
     html = html.replace("__SOURCE__", source_name.replace('"', "'"))
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    d = datetime.now(ZoneInfo("Asia/Riyadh"))
+    html = html.replace("__UPDATED__", f"{d.day}-{d.month}-{d.year}")
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(html)
 
 

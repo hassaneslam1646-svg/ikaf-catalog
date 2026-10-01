@@ -43,6 +43,7 @@ img{max-width:100%}
   display:flex;flex-direction:column;gap:10px}
 .brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .mark{font-weight:800;font-size:15px;display:inline-flex;align-items:center;gap:8px}
+.mark .date{font-family:var(--num);font-weight:600;font-size:13px;color:var(--orange);direction:ltr}
 .mark .dash{width:22px;height:3px;background:var(--orange);border-radius:2px}
 .sub{color:rgba(255,255,255,.62);font-size:12.5px;margin-inline-start:auto}
 .searchwrap{position:relative;display:flex;align-items:center}
@@ -88,7 +89,6 @@ img{max-width:100%}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
   padding:40px 20px;text-align:center;color:var(--muted)}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
-.foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
 
 .lb{position:fixed;inset:0;z-index:60;background:rgba(8,10,22,.85);
   display:flex;align-items:center;justify-content:center;padding:16px;
@@ -140,7 +140,7 @@ img{max-width:100%}
 <div class="bar">
   <div class="bar-in">
     <div class="brandrow">
-      <span class="mark"><span class="dash"></span>تحديث المخزون</span>
+      <span class="mark"><span class="dash"></span>تحديث المخزون <span class="date">__UPDATED__</span></span>
       <span class="sub" id="total"></span>
     </div>
     <div class="searchwrap">
@@ -161,7 +161,6 @@ img{max-width:100%}
     <b>مفيش كود مطابق</b>
     جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).
   </div>
-  <p class="foot" id="foot"></p>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -175,10 +174,6 @@ img{max-width:100%}
       clearBtn=document.getElementById('clear'), chipsEl=document.getElementById('chips');
 
   document.getElementById('total').textContent = ITEMS.length + ' صنف';
-  document.getElementById('foot').textContent =
-    'المصدر: ' + SRC + '. الريشيو متحسّب من شجرة أكواد الجلابية. '
-    + 'الكميات من عمود المستودعات الرئيسية في تقرير المخزون. '
-    + 'البحث بيشتغل بالكود الكامل (14 رقم) أو أي جزء منهم.';
 
   var AR={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
           '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};

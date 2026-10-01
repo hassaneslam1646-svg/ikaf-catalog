@@ -76,6 +76,14 @@ def load_stock(xlsx):
     return out
 
 
+def today():
+    """تاريخ التحديث بتوقيت الرياض، بنفس شكل المستخدم: 1-10-2026."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    d = datetime.now(ZoneInfo("Asia/Riyadh"))
+    return f"{d.day}-{d.month}-{d.year}"
+
+
 def fmt_qty(q):
     # من غير كسور: الكمية بتتقرب للرقم الأقل (42.9 -> 42)
     return int(math.floor(float(q) + 1e-9))
@@ -276,6 +284,7 @@ def main():
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
+    tpl = tpl.replace("__UPDATED__", today())
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(tpl)
 
     pdf_items = [it for it in items if it.get("s") != "photo"]
