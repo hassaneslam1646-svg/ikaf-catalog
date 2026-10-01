@@ -36,7 +36,7 @@ jobs:
           done
           echo "التقرير: $newest"
           pip install --quiet pillow numpy scipy openpyxl pypdf reportlab
-          python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx
+          python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock
           git rm -q -- "${files[@]}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -436,7 +436,9 @@ def write_page(items, source_name):
     from datetime import datetime
     from zoneinfo import ZoneInfo
     d = datetime.now(ZoneInfo("Asia/Riyadh"))
-    html = html.replace("__UPDATED__", f"{d.day}-{d.month}-{d.year}")
+    df = os.path.join(ROOT, "build", "stock_date.txt")
+    upd = open(df, encoding="utf-8").read().strip() if os.path.exists(df) else f"{d.day}-{d.month}-{d.year}"
+    html = html.replace("__UPDATED__", upd)
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(html)
 
 

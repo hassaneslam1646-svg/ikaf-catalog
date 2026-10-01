@@ -32,6 +32,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build import ROOT, load_tree, ratio_label, width_label, log  # noqa: E402
 
+NEW_STOCK = False            # --new-stock: تقرير مخزون جديد -> تاريخ التحديث = النهارده
 MIN_QTY = 20                 # الصنف الجديد بيظهر لو رصيده 20 أو أكتر
 FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
@@ -123,6 +124,17 @@ def wh_split(code, total):
     return {k: v for k, v in out.items() if v > 0} or None
 
 
+DATE_FILE = os.path.join(ROOT, "build", "stock_date.txt")
+
+
+def stock_date(new_stock):
+    """تاريخ آخر تحديث للمخزون. بيتغير لتاريخ النهارده بس لما يكون فيه تقرير مخزون جديد (--new-stock)،
+    وغير كده بيفضل زي ما هو (تعديل الشكل أو الصور مش بيغيّر التاريخ)."""
+    if new_stock or not os.path.exists(DATE_FILE):
+        open(DATE_FILE, "w", encoding="utf-8").write(today() + "\n")
+    return open(DATE_FILE, encoding="utf-8").read().strip()
+
+
 def today():
     """تاريخ التحديث بتوقيت الرياض، بنفس شكل المستخدم: 1-10-2026."""
     from datetime import datetime
@@ -206,9 +218,12 @@ def save_image(src, name):
 
 
 def main():
-    if len(sys.argv) != 4:
+    global NEW_STOCK
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    NEW_STOCK = "--new-stock" in sys.argv[1:]
+    if len(args) != 3:
         sys.exit(__doc__)
-    photos_dir, stock_xlsx, tree_xlsx = sys.argv[1:]
+    photos_dir, stock_xlsx, tree_xlsx = args
     # لو المصدر هو photos/ نفسه (مفيش فولدر الصور الأصلي)، ننسخه الأول لأن photos/ بيتمسح ويتبني من جديد
     if os.path.abspath(photos_dir).startswith(os.path.join(ROOT, "photos")):
         import tempfile
@@ -336,7 +351,7 @@ def main():
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
-    tpl = tpl.replace("__UPDATED__", today())
+    tpl = tpl.replace("__UPDATED__", stock_date(NEW_STOCK))
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(tpl)
 
     pdf_items = [it for it in items if it.get("s") != "photo"]
