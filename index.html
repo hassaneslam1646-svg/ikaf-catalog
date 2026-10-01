@@ -78,7 +78,12 @@ img{max-width:100%}
   overflow:hidden;cursor:pointer;text-align:start;padding:0;font:inherit;color:inherit;
   display:flex;flex-direction:column;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
 .card:hover,.card:focus-visible{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--orange);outline:none}
+.card{position:relative}
 .card img{display:block;width:100%;aspect-ratio:66/100;object-fit:cover;background:var(--surface-2)}
+.low{position:absolute;top:8px;inset-inline-start:8px;background:#D7263D;color:#fff;font-size:11.5px;font-weight:700;
+  padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.qty.is-low{border-color:#D7263D;color:#D7263D}
+.lowtag{display:inline-block;background:#D7263D;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
 .meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:5px}
 .code{font-family:var(--num);font-weight:600;font-size:12.5px;color:var(--ink);
   direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
@@ -258,13 +263,17 @@ img{max-width:100%}
     return it.p!=null ? 'thumb/'+pad(it.p)+'.webp' : 'photos/thumb/'+it.g[0]+'.webp';
   }
 
+  var LOW = 50;   // أقل من كده = كمية قليلة
+  function isLow(it){ return it.q!=null && it.q < LOW; }
+
   function card(it){
     var b=document.createElement('button');
     b.type='button'; b.className='card';
-    var qtyHtml = (it.q==null) ? '' : '<span class="qty">الكمية <b>'+it.q+'</b></span>';
+    var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">الكمية <b>'+it.q+'</b></span>';
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+' صور</span>' : '';
-    b.innerHTML='<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">'+
+    b.innerHTML=(isLow(it)?'<span class="low">كمية قليلة</span>':'')+
+      '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">'+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
       '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+it.m+'</span></span>';
@@ -407,7 +416,7 @@ img{max-width:100%}
     gi=0; showPic();
     lb.querySelector('.lb-code').textContent=it.c;
     lb.querySelector('.bigbadge').textContent=it.r;
-    lb.querySelector('.v-q').textContent = (it.q==null ? '—' : it.q);
+    lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (isLow(it) ? '<span class="lowtag">كمية قليلة</span>' : '');
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
     if(it.w){ Object.keys(it.w).forEach(function(k){
       var sp=document.createElement('span'); sp.textContent=k; var b=document.createElement('b'); b.textContent=it.w[k];
