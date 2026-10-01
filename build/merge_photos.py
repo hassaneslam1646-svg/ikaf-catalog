@@ -199,6 +199,9 @@ def main():
     os.makedirs(os.path.join(ROOT, "photos", "thumb"))
 
     dropped = []
+    # صور المستخدم أكد إنها مكررة (اسم الملف من غير امتداد): build/drop_photos.json
+    dp = os.path.join(ROOT, "build", "drop_photos.json")
+    drop_manual = set(json.load(open(dp, encoding="utf-8")).get("photos", [])) if os.path.exists(dp) else set()
 
     pages_of = {}
     for it in items:
@@ -215,6 +218,9 @@ def main():
         names = []
         for fn in photos.get(code, []):
             src = os.path.join(photos_dir, fn)
+            if os.path.splitext(fn)[0] in drop_manual:
+                dropped.append(fn)
+                continue
             sig = _sig(src)
             if any(_same_group(sig, k) for k in kept):
                 dropped.append(fn)
