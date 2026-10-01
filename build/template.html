@@ -41,11 +41,14 @@ img{max-width:100%}
   background:var(--navy); color:#fff; box-shadow:0 6px 20px rgba(23,27,51,.18)}
 .bar-in{max-width:1180px;margin:0 auto;padding-block:12px;padding-inline:16px;
   display:flex;flex-direction:column;gap:10px}
-.brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brandrow{display:flex;align-items:center;gap:12px}
+.titles{display:flex;flex-direction:column;gap:3px;min-width:0}
+.org{color:rgba(255,255,255,.72);font-size:12.5px;font-weight:500}
+.logo{height:64px;width:auto;margin-inline-start:auto;flex:0 0 auto}
 .mark{font-weight:800;font-size:15px;display:inline-flex;align-items:center;gap:8px}
 .mark .date{font-family:var(--num);font-weight:600;font-size:13px;color:var(--orange);direction:ltr}
 .mark .dash{width:22px;height:3px;background:var(--orange);border-radius:2px}
-.sub{color:rgba(255,255,255,.62);font-size:12.5px;margin-inline-start:auto}
+.sub{color:rgba(255,255,255,.55);font-size:12px}
 .searchwrap{position:relative;display:flex;align-items:center}
 .searchwrap svg{position:absolute;inset-inline-start:14px;width:18px;height:18px;opacity:.55;pointer-events:none}
 #q{width:100%;padding:13px 44px;border:1.5px solid rgba(255,255,255,.18);border-radius:11px;
@@ -140,8 +143,12 @@ img{max-width:100%}
 <div class="bar">
   <div class="bar-in">
     <div class="brandrow">
-      <span class="mark"><span class="dash"></span>تحديث المخزون <span class="date">__UPDATED__</span></span>
-      <span class="sub" id="total"></span>
+      <div class="titles">
+        <span class="org">شركة اكاف العربية - إدارة سلسلة الامداد</span>
+        <span class="mark"><span class="dash"></span>تحديث المخزون <span class="date">__UPDATED__</span></span>
+        <span class="sub" id="total"></span>
+      </div>
+      <img class="logo" src="logo.png" alt="إكاف IKAF" width="203" height="160">
     </div>
     <div class="searchwrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
