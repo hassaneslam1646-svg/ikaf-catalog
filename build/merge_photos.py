@@ -36,7 +36,7 @@ MIN_QTY = 20                 # الصنف الجديد بيظهر لو رصيد�
 FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
 STOCK_SHEET = "المخزون"
-STOCK_COL = "المستودعات الرئيسية"
+STOCK_COL = "المستودعات الرئيسية"  # بعد توحيد المسافات
 # المخازن اللي مجموعها = المستودعات الرئيسية (عمود في التقرير -> الاسم اللي بيظهر للمندوب)
 WAREHOUSES = [("الانتاج التام(الرياض", "الرياض"), ("م جدة الرئيسى", "جدة"),
               ("مستودع مكة المكرمة", "مكة")]
@@ -59,29 +59,52 @@ def load_materials(xlsx):
     return out
 
 
+def _norm(h):
+    return " ".join(str(h).split()) if h is not None else ""
+
+
 def load_stock(xlsx):
+    """تقرير المخزون: شيت "المخزون" (أو أول شيت فيه عمود كود الصنف).
+    الكمية = عمود "المستودعات الرئيسية"، ولو مش موجود = مجموع المخازن الرئيسية التلاتة.
+    صف العناوين ممكن مايبقاش أول صف (تصدير النظام أحيانًا بيبدأ بعنوان التقرير)."""
     wb = openpyxl.load_workbook(xlsx, data_only=True, read_only=True)
-    if STOCK_SHEET not in wb.sheetnames:
-        sys.exit(f"شيت '{STOCK_SHEET}' مش موجود في تقرير المخزون")
-    rows = wb[STOCK_SHEET].iter_rows(values_only=True)
-    head = [str(h).strip() if h is not None else "" for h in next(rows)]
-    if STOCK_COL not in head:
-        sys.exit(f"عمود '{STOCK_COL}' مش موجود في شيت المخزون")
-    qi = head.index(STOCK_COL)
-    wcols = [(head.index(c), lbl) for c, lbl in WAREHOUSES if c in head]
+    names = ([STOCK_SHEET] if STOCK_SHEET in wb.sheetnames else []) + \
+            [n for n in wb.sheetnames if n != STOCK_SHEET]
+    wnames = [_norm(c) for c, _ in WAREHOUSES]
+    for name in names:
+        rows = list(wb[name].iter_rows(values_only=True))
+        for hi, row in enumerate(rows[:15]):
+            head = [_norm(h) for h in row]
+            if "كود الصنف" not in head:
+                continue
+            ci = head.index("كود الصنف")
+            qi = head.index(STOCK_COL) if STOCK_COL in head else None
+            wcols = [(head.index(n), lbl) for n, (_, lbl) in zip(wnames, WAREHOUSES) if n in head]
+            if qi is None and not wcols:
+                continue
+            log(f"تقرير المخزون: شيت '{name}'، الكمية من "
+                + (f"'{STOCK_COL}'" if qi is not None else "مجموع المخازن الرئيسية"))
+            return _read_rows(rows[hi + 1:], ci, qi, wcols)
+    sys.exit("مش لاقي في تقرير المخزون عمود 'كود الصنف' ومعاه 'المستودعات الرئيسية' أو أعمدة المخازن")
+
+
+def _read_rows(rows, ci, qi, wcols):
     out = {}
     for r in rows:
-        if r[0] is None:
+        if r is None or ci >= len(r) or r[ci] is None:
             continue
-        code = str(r[0]).strip().split(".")[0].lstrip("0")
+        code = str(r[ci]).strip().split(".")[0].lstrip("0")
         if not code.isdigit():
             continue                                   # Grand Total وغيره
-        q = r[qi] if isinstance(r[qi], (int, float)) else 0
+        ws = {lbl: r[i] for i, lbl in wcols if i < len(r) and isinstance(r[i], (int, float))}
+        if qi is not None:
+            q = r[qi] if qi < len(r) and isinstance(r[qi], (int, float)) else 0
+        else:
+            q = sum(ws.values())
         out[code] = out.get(code, 0) + q
         w = WH.setdefault(code, {})
-        for i, lbl in wcols:
-            if isinstance(r[i], (int, float)):
-                w[lbl] = w.get(lbl, 0) + r[i]
+        for lbl, v in ws.items():
+            w[lbl] = w.get(lbl, 0) + v
     return out
 
 
