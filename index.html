@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>كتالوج إكاف بالكود</title>
+<title>تحديث المخزون</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Poppins:wght@500;600;700&display=swap">
 <style>
@@ -140,7 +140,7 @@ img{max-width:100%}
 <div class="bar">
   <div class="bar-in">
     <div class="brandrow">
-      <span class="mark"><span class="dash"></span>كتالوج إكاف</span>
+      <span class="mark"><span class="dash"></span>تحديث المخزون</span>
       <span class="sub" id="total"></span>
     </div>
     <div class="searchwrap">
@@ -206,7 +206,8 @@ img{max-width:100%}
     var b=document.createElement('button');
     var cur=isMat?mat:active;
     b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',String(cur===value));
-    b.innerHTML=label+(n!=null?' <span class="n">'+n+'</span>':'');
+    // بار الريشيو من غير أعداد عشان الرقم مايتلخبطش مع العرض (B24)
+    b.innerHTML=label+(isMat && n!=null?' <span class="n">'+n+'</span>':'');
     if(value!==null && !n && cur!==value) b.disabled=true;
     b.addEventListener('click',function(){
       if(isMat) mat=(mat===value)?null:value; else active=(active===value)?null:value;
