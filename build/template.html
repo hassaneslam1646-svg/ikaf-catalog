@@ -531,7 +531,8 @@ img{max-width:100%}
       '<div class="cart-foot">'+
       '<input class="rep" type="text" placeholder="اسم المندوب" autocomplete="name">'+
       '<textarea class="notes" placeholder="ملاحظات للمشرف (اختياري)"></textarea>'+
-      '<div class="row"><button class="btn wa" data-c="share" type="button">إرسال للمشرف واتساب</button>'+
+      '<div class="row"><button class="btn wa" data-c="share" type="button">إرسال ملف الطلب واتساب</button>'+
+      '<button class="btn" data-c="text" type="button">إرسال كرسالة بس</button>'+
       '<button class="btn" data-c="clear" type="button">تفريغ السلة</button></div></div></div>';
     document.body.appendChild(cartEl);
     var rep=cartEl.querySelector('.rep'); rep.value=load(NAMEKEY)||'';
@@ -543,6 +544,7 @@ img{max-width:100%}
       if(a==='close') closeCart();
       else if(a==='clear'){ if(confirm('تفريغ السلة كلها؟')){ cart={}; persist(); drawCart(); } }
       else if(a==='share') shareCart(el);
+      else if(a==='text') shareText();
       else if(a==='rm'){ delete cart[el.getAttribute('data-code')]; persist(); drawCart(); }
     });
     cartEl.addEventListener('change',function(e){
@@ -569,6 +571,7 @@ img{max-width:100%}
       list.appendChild(row);
     });
     cartEl.querySelector('[data-c="share"]').disabled = !codes.length;
+    cartEl.querySelector('[data-c="text"]').disabled = !codes.length;
   }
   function openCart(){ if(!cartEl) buildCart(); drawCart(); cartEl.hidden=false; document.body.style.overflow='hidden'; }
   function closeCart(){ if(!cartEl) return; cartEl.hidden=true; if(!lb||lb.hidden) document.body.style.overflow=''; }
@@ -584,7 +587,9 @@ img{max-width:100%}
       sc.onload=function(){ window.XLSX?res(window.XLSX):rej(); }; sc.onerror=rej; document.head.appendChild(sc); });
   }
   function buildFile(rep, notes){
-    var R=rows(), when=stamp(), base='طلب '+(rep||'مندوب')+' '+when.replace(/[: ]/g,'-');
+    var R=rows(), when=stamp(), d=new Date();
+    // اسم الملف إنجليزي بس: واتساب على الآيفون بيفشل يبعت ملف اسمه عربي
+    var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     var aoa=[['طلب مندوب — شركة اكاف العربية'],['المندوب',rep||''],['التاريخ',when]];
     if(notes) aoa.push(['ملاحظات',notes]);
     aoa.push([]); aoa.push(['م','الكود','الريشيو','الموديل','الخامة','الكمية المطلوبة','المتاح وقت الطلب']);
@@ -613,16 +618,24 @@ img{max-width:100%}
     var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
     if(!rep){ toast('اكتب اسمك الأول'); cartEl.querySelector('.rep').focus(); return; }
     var text=summary(rep)+(notes?'\nملاحظات: '+notes:'');
+    // الملخص بيتنسخ عشان المندوب يلزقه مع الملف لو حب (إرسال ملف + نص مع بعض بيفشل على واتساب الآيفون)
+    try{ navigator.clipboard && navigator.clipboard.writeText(text); }catch(e){}
     var old=btn.textContent; btn.textContent='جاري تجهيز الملف…'; btn.disabled=true;
     buildFile(rep, notes).then(function(f){
       if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
-        return navigator.share({files:[f], text:text}).then(function(){ afterShare(); }, function(e){ if(e && e.name!=='AbortError') throw e; });
+        return navigator.share({files:[f]}).then(function(){ afterShare(); }, function(e){ if(e && e.name!=='AbortError') throw e; });
       }
       // الجهاز مش بيدعم مشاركة الملفات: نزّل الملف وافتح واتساب بالملخص
       var a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
       window.open('https://wa.me/?text='+encodeURIComponent(text+'\n(الملف اتنزّل على الجهاز — ابعته في نفس المحادثة)'),'_blank');
     }).catch(function(){ toast('حصلت مشكلة في تجهيز الملف'); })
       .then(function(){ btn.textContent=old; btn.disabled=false; });
+  }
+  function shareText(){
+    var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
+    if(!rep){ toast('اكتب اسمك الأول'); cartEl.querySelector('.rep').focus(); return; }
+    var text=summary(rep)+(notes?'\nملاحظات: '+notes:'');
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   }
   function afterShare(){
     if(confirm('الطلب اتبعت؟ تفرّغ السلة؟')){ cart={}; persist(); drawCart(); closeCart(); }
