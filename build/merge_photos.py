@@ -37,6 +37,10 @@ FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
 STOCK_SHEET = "المخزون"
 STOCK_COL = "المستودعات الرئيسية"
+# المخازن اللي مجموعها = المستودعات الرئيسية (عمود في التقرير -> الاسم اللي بيظهر للمندوب)
+WAREHOUSES = [("الانتاج التام(الرياض", "الرياض"), ("م جدة الرئيسى", "جدة"),
+              ("مستودع مكة المكرمة", "مكة")]
+WH = {}   # الكود -> {المخزن: الكمية}
 
 NAME_RE = re.compile(r"^(1\d{13})(?:_(\d+))?\.(jpe?g|png|webp)$", re.I)
 
@@ -64,6 +68,7 @@ def load_stock(xlsx):
     if STOCK_COL not in head:
         sys.exit(f"عمود '{STOCK_COL}' مش موجود في شيت المخزون")
     qi = head.index(STOCK_COL)
+    wcols = [(head.index(c), lbl) for c, lbl in WAREHOUSES if c in head]
     out = {}
     for r in rows:
         if r[0] is None:
@@ -73,7 +78,26 @@ def load_stock(xlsx):
             continue                                   # Grand Total وغيره
         q = r[qi] if isinstance(r[qi], (int, float)) else 0
         out[code] = out.get(code, 0) + q
+        w = WH.setdefault(code, {})
+        for i, lbl in wcols:
+            if isinstance(r[i], (int, float)):
+                w[lbl] = w.get(lbl, 0) + r[i]
     return out
+
+
+def wh_split(code, total):
+    """تفصيلة المخازن للصنف (من غير كسور). لو الكمية متعدّلة يدويًا التفصيلة بتتظبط بنفس النسبة."""
+    w = {k: v for k, v in WH.get(code, {}).items() if v}
+    raw = sum(w.values())
+    if not w or raw <= 0:
+        return None
+    f = total / raw if abs(raw - total) > 0.01 else 1.0
+    exact = {k: v * f for k, v in w.items()}
+    out = {k: fmt_qty(v) for k, v in exact.items()}
+    # التفصيلة لازم مجموعها = الكمية اللي ظاهرة بره؛ الباقي بيروح للمخزن اللي كسره أكبر
+    for k in sorted(exact, key=lambda k: exact[k] - out[k], reverse=True)[:fmt_qty(total) - sum(out.values())]:
+        out[k] += 1
+    return {k: v for k, v in out.items() if v > 0} or None
 
 
 def today():
@@ -246,6 +270,11 @@ def main():
         old = it.get("q")
         if it["c"] in stock:
             it["q"] = fmt_qty(stock[it["c"]])
+            w = wh_split(it["c"], stock[it["c"]])
+            if w:
+                it["w"] = w
+            else:
+                it.pop("w", None)
         else:
             it["q"] = 0
             pdf_no_stock.append(it["c"])
@@ -270,7 +299,7 @@ def main():
             unknown.append((code, code[8:10], code[4:6]))
             continue
         items.append({"p": None, "c": code, "r": rl + (wl or ""), "rn": rn,
-                      "q": fmt_qty(q), "m": mn, "mc": code[4:6], "rc": code[8:10],
+                      "q": fmt_qty(q), "w": wh_split(code, q), "m": mn, "mc": code[4:6], "rc": code[8:10],
                       "u": code[:11], "s": "photo", "g": gallery(code)})
         added.append(code)
 

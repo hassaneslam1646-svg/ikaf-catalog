@@ -130,6 +130,11 @@ img{max-width:100%}
 .btn:hover{border-color:var(--orange)}
 .btn.primary{background:var(--orange);border-color:var(--orange);color:#231400;font-weight:700}
 .btn[disabled]{opacity:.4;cursor:default}
+.btn.wa{background:#25D366;border-color:#25D366;color:#06301A;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.btn.wa svg{width:17px;height:17px}
+.wh{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.wh span{background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:2px 8px;font-size:12.5px;color:var(--muted)}
+.wh b{font-family:var(--num);color:var(--ink);font-weight:700;margin-inline-start:4px}
 @media (max-width:640px){
   .lb{padding:10px}
   .lb-box{flex-direction:column;overflow-y:auto}
@@ -322,12 +327,14 @@ img{max-width:100%}
       '<button class="x" type="button" data-a="close" aria-label="إغلاق">×</button></div>'+
       '<dl class="kv">'+
       '<dt>الريشيو</dt><dd><span class="bigbadge"></span></dd>'+
-      '<dt>الكمية</dt><dd class="bigqty v-q"></dd>'+
+      '<dt>الكمية</dt><dd><span class="bigqty v-q"></span><div class="wh v-w"></div></dd>'+
       '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>'+
       '<dt>الموديل</dt><dd class="v-m"></dd>'+
       '<dt class="k-k">الخامة</dt><dd class="v-k"></dd>'+
       '<dt class="k-p">الصفحة</dt><dd class="v-p n"></dd></dl>'+
-      '<div class="btnrow"><button class="btn primary" data-a="copy" type="button">نسخ الكود</button>'+
+      '<div class="btnrow">'+
+      '<button class="btn wa" data-a="wa" type="button"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>واتساب</button>'+
+      '<button class="btn primary" data-a="copy" type="button">نسخ الكود</button>'+
       '<button class="btn" data-a="prev" type="button">السابق</button>'+
       '<button class="btn" data-a="next" type="button">التالي</button></div></div></div>';
     document.body.appendChild(lb);
@@ -341,9 +348,44 @@ img{max-width:100%}
       else if(a==='prev') step(-1);
       else if(a==='next') step(1);
       else if(a==='copy') copy(el);
+      else if(a==='wa') shareWa(el);
       else if(a==='gprev') gstep(-1);
       else if(a==='gnext') gstep(1);
     });
+  }
+
+  /* ---------- إرسال الصنف واتساب: الصورة + بيانات الصنف (من غير الكمية) ---------- */
+  function waText(it){
+    var lines=['كود: '+it.c,'الريشيو: '+it.r,'الموديل: '+it.m];
+    if(it.k) lines.push('الخامة: '+it.k);
+    return lines.join('\n');
+  }
+  function toJpeg(src){
+    return new Promise(function(res,rej){
+      var im=new Image(); im.crossOrigin='anonymous';
+      im.onload=function(){
+        var c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight;
+        var g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0);
+        c.toBlob(function(b){ b?res(b):rej(); },'image/jpeg',0.9);
+      };
+      im.onerror=rej; im.src=src;
+    });
+  }
+  function shareWa(btn){
+    var it=shown[idx]; if(!it) return;
+    var text=waText(it), src=pics(it)[gi];
+    var fallback=function(){
+      var url=new URL(src, location.href).href;
+      window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank');
+    };
+    if(!(navigator.share && navigator.canShare)){ fallback(); return; }
+    var old=btn.lastChild.textContent; btn.lastChild.textContent='جاري التجهيز…'; btn.disabled=true;
+    toJpeg(src).then(function(blob){
+      var f=new File([blob], it.c+'.jpg', {type:'image/jpeg'});
+      if(!navigator.canShare({files:[f]})) throw 0;
+      return navigator.share({files:[f], text:text});
+    }).catch(function(e){ if(!e || e.name!=='AbortError') fallback(); })
+      .then(function(){ btn.lastChild.textContent=old; btn.disabled=false; });
   }
 
   function copy(btn){
@@ -366,6 +408,11 @@ img{max-width:100%}
     lb.querySelector('.lb-code').textContent=it.c;
     lb.querySelector('.bigbadge').textContent=it.r;
     lb.querySelector('.v-q').textContent = (it.q==null ? '—' : it.q);
+    var wEl=lb.querySelector('.v-w'); wEl.textContent='';
+    if(it.w){ Object.keys(it.w).forEach(function(k){
+      var sp=document.createElement('span'); sp.textContent=k; var b=document.createElement('b'); b.textContent=it.w[k];
+      sp.appendChild(b); wEl.appendChild(sp); }); }
+    wEl.hidden=!it.w;
     lb.querySelector('.v-rn').textContent=it.rn;
     lb.querySelector('.v-m').textContent=it.m;
     lb.querySelector('.v-k').textContent=it.k;
