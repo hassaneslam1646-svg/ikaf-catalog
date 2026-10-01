@@ -19,6 +19,7 @@
 التشغيل أكتر من مرة آمن: الأصناف والصور المضافة قبل كده بتتشال وتتبني من جديد.
 """
 import json
+import math
 import os
 import re
 import shutil
@@ -75,8 +76,18 @@ def load_stock(xlsx):
 
 
 def fmt_qty(q):
-    q = round(float(q), 2)
-    return int(q) if q == int(q) else q
+    # من غير كسور: الكمية بتتقرب للرقم الأقل (42.9 -> 42)
+    return int(math.floor(float(q) + 1e-9))
+
+
+def load_overrides():
+    """كميات متعدّلة يدويًا من المستخدم: build/overrides.json  {"الكود": الكمية}.
+    بتغلب على تقرير المخزون في كل تحديث لحد ما تتشال من الملف."""
+    p = os.path.join(ROOT, "build", "overrides.json")
+    if not os.path.exists(p):
+        return {}
+    data = json.load(open(p, encoding="utf-8"))
+    return {str(k).strip().lstrip("0"): v for k, v in data.items() if not str(k).startswith("_")}
 
 
 def read_items():
@@ -114,6 +125,10 @@ def main():
     models, ratios = load_tree(tree_xlsx)
     materials = load_materials(tree_xlsx)
     stock = load_stock(stock_xlsx)
+    overrides = load_overrides()
+    for c, q in overrides.items():
+        log(f"كمية متعدّلة يدويًا: {c} = {q} (التقرير: {stock.get(c)})")
+        stock[c] = q
     log(f"تقرير المخزون: {len(stock)} كود")
 
     # الصور مجمّعة بالكود، بالترتيب: الكود.jpg ثم _2 ثم _3 ...
