@@ -25,6 +25,7 @@ import re
 import shutil
 import sys
 
+import numpy as np
 import openpyxl
 from PIL import Image
 
@@ -108,6 +109,36 @@ def read_items():
     return json.loads(m.group(1)), (src.group(1) if src else "")
 
 
+# ---------------------------------------------------------------------------
+# تكرار الصور: الصورة الزيادة بتتشال لو هي نفس الصورة، أو نفس المجموعة اللونية
+# (نفس مربعات COLORS تحت الكود). المجموعة اللونية المختلفة بتفضل.
+# ---------------------------------------------------------------------------
+CARD = (0.12267, 0.11500, 0.90044, 0.77900)   # صورة المنتج في قالب الكتالوج
+SWATCH = (0.40, 0.862, 0.80, 0.912)           # مربعات COLORS
+SAME_IMAGE = 3.0      # فرق متوسط البكسل في صورة المنتج
+SAME_SWATCH = 7.5     # فرق متوسط البكسل في مربعات الألوان
+
+
+def _region(im, box, size):
+    w, h = im.size
+    crop = im.crop((int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)))
+    return np.asarray(crop.resize(size, Image.BILINEAR), dtype=float)
+
+
+def _sig(path):
+    im = Image.open(path).convert("RGB")
+    px = np.asarray(im.resize((50, 90)), dtype=float)[45, 1]
+    poster = px[2] > px[0] + 40 and px[2] > 100        # خلفية الكتالوج الكحلي
+    return {"card": _region(im, CARD, (32, 48)), "sw": _region(im, SWATCH, (40, 4)),
+            "poster": poster}
+
+
+def _same_group(a, b):
+    if np.abs(a["card"] - b["card"]).mean() < SAME_IMAGE:
+        return True
+    return a["poster"] and b["poster"] and np.abs(a["sw"] - b["sw"]).mean() < SAME_SWATCH
+
+
 def save_image(src, name):
     im = Image.open(src).convert("RGB")
     full = im.resize((FULL_W, round(im.height * FULL_W / im.width)), Image.LANCZOS) \
@@ -167,13 +198,33 @@ def main():
     os.makedirs(os.path.join(ROOT, "photos", "full"))
     os.makedirs(os.path.join(ROOT, "photos", "thumb"))
 
-    def gallery(code):
+    dropped = []
+
+    pages_of = {}
+    for it in items:
+        if it.get("p"):
+            pages_of.setdefault(it["c"], []).append(it["p"])
+    done = {}
+
+    def gallery(code, page=None):
+        """صور الصنف من غير تكرار: صورة واحدة لكل مجموعة لونية.
+        صفحات الـPDF للكود (لو موجودة) بتتحسب الأول وبتتفضّل."""
+        if code in done:
+            return list(done[code])
+        kept = [_sig(os.path.join(ROOT, "full", f"{pg:03d}.webp")) for pg in pages_of.get(code, [])]
         names = []
         for fn in photos.get(code, []):
+            src = os.path.join(photos_dir, fn)
+            sig = _sig(src)
+            if any(_same_group(sig, k) for k in kept):
+                dropped.append(fn)
+                continue
+            kept.append(sig)
             name = os.path.splitext(fn)[0]
-            save_image(os.path.join(photos_dir, fn), name)
+            save_image(src, name)
             names.append(name)
-        return names
+        done[code] = names
+        return list(names)
 
     pdf_codes = {it["c"] for it in items}
     qty_changed, pdf_no_stock = [], []
@@ -186,7 +237,7 @@ def main():
             pdf_no_stock.append(it["c"])
         if old != it["q"]:
             qty_changed.append((it["c"], old, it["q"]))
-        g = gallery(it["c"])
+        g = gallery(it["c"], it.get("p"))
         if g:
             it["g"] = g
 
@@ -235,6 +286,8 @@ def main():
         log(f"!! مش في الشجرة: {unknown}")
     if skipped:
         log(f"ملفات اسمها مش كود: {skipped}")
+    if dropped:
+        log(f"صور مكررة اتشالت (نفس الصورة أو نفس المجموعة اللونية): {len(dropped)}")
     log(f"الإجمالي: {len(items)} صنف")
 
 
