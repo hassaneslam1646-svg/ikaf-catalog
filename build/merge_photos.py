@@ -80,6 +80,15 @@ def fmt_qty(q):
     return int(math.floor(float(q) + 1e-9))
 
 
+def load_excluded():
+    """أكواد المستخدم طلب تتشال من الكتالوج: build/excluded.json  {"الكود": "السبب"}."""
+    p = os.path.join(ROOT, "build", "excluded.json")
+    if not os.path.exists(p):
+        return {}
+    data = json.load(open(p, encoding="utf-8"))
+    return {str(k).strip().lstrip("0"): v for k, v in data.items() if not str(k).startswith("_")}
+
+
 def load_overrides():
     """كميات متعدّلة يدويًا من المستخدم: build/overrides.json  {"الكود": الكمية}.
     بتغلب على تقرير المخزون في كل تحديث لحد ما تتشال من الملف."""
@@ -146,6 +155,10 @@ def main():
     log(f"الصور: {sum(len(v) for v in photos.values())} صورة لـ {len(photos)} كود")
 
     items, source = read_items()
+    excluded = load_excluded()
+    if excluded:
+        log(f"أكواد متشالة بطلب المستخدم: {sorted(excluded)}")
+    items = [it for it in items if it["c"] not in excluded]
     items = [it for it in items if it.get("s") != "photo"]   # من تشغيل سابق
     for it in items:
         it.pop("g", None)
@@ -178,7 +191,7 @@ def main():
             it["g"] = g
 
     added, low, missing, unknown = [], [], [], []
-    for code in sorted(set(photos) - pdf_codes):
+    for code in sorted(set(photos) - pdf_codes - set(excluded)):
         q = stock.get(code)
         if q is None:
             missing.append(code)
