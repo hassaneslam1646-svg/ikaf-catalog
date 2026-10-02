@@ -311,6 +311,7 @@ img{max-width:100%}
   function pad(n){ return String(n).padStart(3,'0'); }
   function pics(it){
     var a = it.p!=null ? ['full/'+pad(it.p)+'.webp'] : [];
+    (it.xp||[]).forEach(function(pg){ a.push('full/'+pad(pg)+'.webp'); });
     (it.g||[]).forEach(function(g){ a.push('photos/full/'+g+'.webp'); });
     return a;
   }

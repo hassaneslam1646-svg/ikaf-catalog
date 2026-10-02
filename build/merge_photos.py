@@ -278,10 +278,30 @@ def main():
     dp = os.path.join(ROOT, "build", "drop_photos.json")
     drop_manual = set(json.load(open(dp, encoding="utf-8")).get("photos", [])) if os.path.exists(dp) else set()
 
+    # الكود اللي متكرر على أكتر من صفحة في الـPDF بيظهر كارت واحد بس:
+    # الصفحة التانية بتتشال لو نفس المجموعة اللونية، أو بتبقى صورة إضافية لو مجموعة مختلفة
+    first, merged = {}, []
+    for it in items:
+        if it.get("p") is None:
+            continue
+        if it["c"] not in first:
+            first[it["c"]] = it
+            continue
+        keep = first[it["c"]]
+        mine = [keep["p"]] + keep.get("xp", [])
+        sigs = [_sig(os.path.join(ROOT, "full", f"{pg:03d}.webp")) for pg in mine]
+        if not any(_same_group(_sig(os.path.join(ROOT, "full", f"{it['p']:03d}.webp")), k) for k in sigs):
+            keep.setdefault("xp", []).append(it["p"])
+        merged.append((it["c"], it["p"]))
+        it["_drop"] = True
+    items = [it for it in items if not it.get("_drop")]
+    if merged:
+        log(f"أكواد متكررة في الـPDF اتجمعت في كارت واحد: {merged}")
+
     pages_of = {}
     for it in items:
         if it.get("p"):
-            pages_of.setdefault(it["c"], []).append(it["p"])
+            pages_of.setdefault(it["c"], []).extend([it["p"]] + it.get("xp", []))
     done = {}
 
     def gallery(code, page=None):
