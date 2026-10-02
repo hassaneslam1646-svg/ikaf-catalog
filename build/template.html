@@ -80,6 +80,14 @@ img{max-width:100%}
 .card:hover,.card:focus-visible{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--orange);outline:none}
 .card{position:relative}
 .card img{display:block;width:100%;aspect-ratio:66/100;object-fit:cover;background:var(--surface-2)}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;aspect-ratio:66/100;
+  background:linear-gradient(160deg,#2A3375,#1A2150);color:#fff;text-align:center;padding:12px}
+.ph img{width:46%;height:auto;aspect-ratio:auto;background:none;opacity:.9}
+.ph span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.12);border:1px dashed rgba(255,255,255,.4);border-radius:999px;padding:4px 12px}
+.lb-img .ph{aspect-ratio:auto;height:100%;min-height:300px}
+.lb-img .ph img{width:40%;max-height:none}
+.pendbtn{border:1px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-inline-start:8px}
+.pendbtn[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
 .low{position:absolute;top:8px;inset-inline-start:8px;background:#D7263D;color:#fff;font-size:11.5px;font-weight:700;
   padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .qty.is-low{border-color:#D7263D;color:#D7263D}
@@ -280,11 +288,13 @@ img{max-width:100%}
   }
 
   var shown=[];
+  var onlyPend=false, PENDN=ITEMS.filter(function(it){ return it.s==='pending'; }).length;
   function filtered(){
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
     return ITEMS.filter(function(it){
       if(active && it.r!==active) return false;
       if(mat && it.k!==mat) return false;
+      if(onlyPend && !isPending(it)) return false;
       if(!raw) return true;
       if(d && it.c.indexOf(d)!==-1) return true;
       if(t && it._t.indexOf(t)!==-1) return true;
@@ -299,8 +309,11 @@ img{max-width:100%}
     return a;
   }
   function thumbSrc(it){
-    return it.p!=null ? 'thumb/'+pad(it.p)+'.webp' : 'photos/thumb/'+it.g[0]+'.webp';
+    if(it.p!=null) return 'thumb/'+pad(it.p)+'.webp';
+    return it.g && it.g.length ? 'photos/thumb/'+it.g[0]+'.webp' : 'logo.png';
   }
+  function isPending(it){ return it.s==='pending'; }
+  var PH='<div class="ph"><img src="logo.png" alt=""><span>جاري التصوير</span></div>';
 
   var LOW = 50;   // أقل من كده = كمية قليلة
   function isLow(it){ return it.q!=null && it.q < LOW; }
@@ -312,7 +325,7 @@ img{max-width:100%}
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+' صور</span>' : '';
     b.innerHTML=(isLow(it)?'<span class="low">كمية قليلة</span>':'')+
-      '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">'+
+      (isPending(it) ? PH : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">')+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
       '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+it.m+'</span></span>';
@@ -328,9 +341,12 @@ img{max-width:100%}
     grid.appendChild(frag);
     empty.hidden = shown.length!==0;
     clearBtn.hidden = q.value==='';
-    countEl.innerHTML = shown.length===ITEMS.length
+    countEl.innerHTML = (shown.length===ITEMS.length
       ? 'كل الأصناف — <b>'+ITEMS.length+'</b> صنف'
-      : '<b>'+shown.length+'</b> من '+ITEMS.length+' صنف';
+      : '<b>'+shown.length+'</b> من '+ITEMS.length+' صنف')
+      + (PENDN ? '<button type="button" class="pendbtn" aria-pressed="'+onlyPend+'">جاري التصوير '+PENDN+'</button>' : '');
+    var pb=countEl.querySelector('.pendbtn');
+    if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; render(); });
   }
 
   /* ---------- نافذة الصنف ---------- */
@@ -355,8 +371,9 @@ img{max-width:100%}
   var gi=0;
   function showPic(){
     var it=shown[idx]; if(!it) return;
-    var a=pics(it), im=lb.querySelector('.lb-img img');
-    im.src=a[gi]; im.alt='صنف كود '+it.c+' — صورة '+(gi+1);
+    var a=pics(it), im=lb.querySelector('.lb-img > img'), ph=lb.querySelector('.lb-img .ph');
+    im.hidden=!a.length; ph.hidden=!!a.length;
+    if(a.length){ im.src=a[gi]; im.alt='صنف كود '+it.c+' — صورة '+(gi+1); }
     var multi=a.length>1;
     lb.querySelector('.gnav.prev').hidden = !multi || gi<=0;
     lb.querySelector('.gnav.next').hidden = !multi || gi>=a.length-1;
@@ -367,7 +384,7 @@ img{max-width:100%}
   function buildLb(){
     lb=document.createElement('div'); lb.className='lb'; lb.hidden=true;
     lb.innerHTML='<div class="lb-box" role="dialog" aria-modal="true" aria-label="تفاصيل الصنف">'+
-      '<div class="lb-img"><img alt="">'+
+      '<div class="lb-img"><img alt="">'+PH+
       '<button class="gnav prev" type="button" data-a="gprev" aria-label="الصورة السابقة">&#8250;</button>'+
       '<button class="gnav next" type="button" data-a="gnext" aria-label="الصورة التالية">&#8249;</button>'+
       '<span class="gcount" dir="ltr"></span></div><div class="lb-side">'+
@@ -427,6 +444,7 @@ img{max-width:100%}
   function shareWa(btn){
     var it=shown[idx]; if(!it) return;
     var text=waText(it), src=pics(it)[gi];
+    if(!src){ window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); return; }
     var fallback=function(){
       var url=new URL(src, location.href).href;
       window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank');
@@ -563,7 +581,7 @@ img{max-width:100%}
     codes.forEach(function(c){
       var it=BYCODE[c], over = it.q!=null && cart[c]>it.q;
       var row=document.createElement('div'); row.className='ci';
-      row.innerHTML='<img alt="" src="'+thumbSrc(it)+'">'+
+      row.innerHTML=(isPending(it)?'<img alt="" src="logo.png" style="object-fit:contain;background:#1A2150;padding:6px">':'<img alt="" src="'+thumbSrc(it)+'">')+
         '<div><div class="c">'+c+'</div><div class="d">'+it.r+' · '+it.m+(it.k?' · '+it.k:'')+'</div>'+
         '<div class="d'+(over?' warn':'')+'">المتاح '+(it.q==null?'—':it.q)+(over?' — المطلوب أكتر من المتاح':'')+'</div></div>'+
         '<div class="ctl"><input type="text" inputmode="decimal" autocomplete="off" data-code="'+c+'" value="'+cart[c]+'" aria-label="الكمية">'+

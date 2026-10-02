@@ -42,6 +42,8 @@ STOCK_COL = "المستودعات الرئيسية"  # بعد توحيد الم�
 WAREHOUSES = [("الانتاج التام(الرياض", "الرياض"), ("م جدة الرئيسى", "جدة"),
               ("مستودع مكة المكرمة", "مكة")]
 WH = {}   # الكود -> {المخزن: الكمية}
+CAT = {}  # الكود -> التصنيف (من عمود "التصنيف" في التقرير لو موجود)
+PENDING_CATS = {"جلابيه", "جلابية"}   # الأصناف المتعرضة "جاري التصوير" لو مالهاش صورة
 
 NAME_RE = re.compile(r"^(1\d{13})(?:_(\d+))?\.(jpe?g|png|webp)$", re.I)
 
@@ -85,11 +87,12 @@ def load_stock(xlsx):
                 continue
             log(f"تقرير المخزون: شيت '{name}'، الكمية من "
                 + (f"'{STOCK_COL}'" if qi is not None else "مجموع المخازن الرئيسية"))
-            return _read_rows(rows[hi + 1:], ci, qi, wcols)
+            ti = head.index("التصنيف") if "التصنيف" in head else None
+            return _read_rows(rows[hi + 1:], ci, qi, wcols, ti)
     sys.exit("مش لاقي في تقرير المخزون عمود 'كود الصنف' ومعاه 'المستودعات الرئيسية' أو أعمدة المخازن")
 
 
-def _read_rows(rows, ci, qi, wcols):
+def _read_rows(rows, ci, qi, wcols, ti=None):
     out = {}
     for r in rows:
         if r is None or ci >= len(r) or r[ci] is None:
@@ -103,6 +106,8 @@ def _read_rows(rows, ci, qi, wcols):
         else:
             q = sum(ws.values())
         out[code] = out.get(code, 0) + q
+        if ti is not None and ti < len(r) and r[ti]:
+            CAT[code] = _norm(r[ti])
         w = WH.setdefault(code, {})
         for lbl, v in ws.items():
             w[lbl] = w.get(lbl, 0) + v
@@ -260,7 +265,7 @@ def main():
     if excluded:
         log(f"أكواد متشالة بطلب المستخدم: {sorted(excluded)}")
     items = [it for it in items if it["c"] not in excluded]
-    items = [it for it in items if it.get("s") != "photo"]   # من تشغيل سابق
+    items = [it for it in items if it.get("s") not in ("photo", "pending")]   # من تشغيل سابق
     for it in items:
         it.pop("g", None)
 
@@ -341,6 +346,28 @@ def main():
                       "u": code[:11], "s": "photo", "g": gallery(code)})
         added.append(code)
 
+    # جلابية رصيدها 20 أو أكتر ومالهاش صورة لسه: بتظهر "جاري التصوير" في آخر الصفحة
+    pending, pend_skip = [], []
+    if not CAT:
+        log("!! تقرير المخزون مفيهوش عمود 'التصنيف' - أصناف 'جاري التصوير' مش هتتضاف")
+    shown_codes = {it["c"] for it in items}
+    for code in sorted(c for c, k in CAT.items() if k in PENDING_CATS):
+        if code in shown_codes or code in excluded or stock.get(code, 0) < MIN_QTY:
+            continue
+        if not re.fullmatch(r"1\d{13}", code):
+            pend_skip.append(code)                      # مش 14 رقم - مايتفكش من الشجرة
+            continue
+        rl, rn = ratio_label(code[8:10], ratios)
+        wl, mn = width_label(code[4:6], models)
+        if rl is None or mn is None:
+            unknown.append((code, code[8:10], code[4:6]))
+            continue
+        q = stock[code]
+        items.append({"p": None, "c": code, "r": rl + (wl or ""), "rn": rn,
+                      "q": fmt_qty(q), "w": wh_split(code, q), "m": mn, "mc": code[4:6], "rc": code[8:10],
+                      "u": code[:11], "s": "pending"})
+        pending.append(code)
+
     # الخامة لكل صنف (خانة 2-3) — للفلتر في الصفحة
     nomat = sorted({it["c"][1:3] for it in items if it["c"][1:3] not in materials})
     for it in items:
@@ -354,7 +381,7 @@ def main():
     tpl = tpl.replace("__UPDATED__", stock_date(NEW_STOCK))
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(tpl)
 
-    pdf_items = [it for it in items if it.get("s") != "photo"]
+    pdf_items = [it for it in items if it.get("s") not in ("photo", "pending")]
     log(f"أصناف الـPDF: {len(pdf_items)} ({len(pdf_codes)} كود) — {sum(1 for it in pdf_items if it.get('g'))} منهم اتضافلهم صور")
     log(f"كميات اتحدّثت من تقرير المخزون: {len(qty_changed)}")
     if pdf_no_stock:
@@ -368,6 +395,9 @@ def main():
         log(f"!! مش في الشجرة: {unknown}")
     if skipped:
         log(f"ملفات اسمها مش كود: {skipped}")
+    log(f"جاري التصوير (جلابية من غير صورة، رصيد {MIN_QTY}+): {len(pending)}")
+    if pend_skip:
+        log(f"جلابية من غير صورة اتسابت عشان الكود مش 14 رقم: {pend_skip}")
     if dropped:
         log(f"صور مكررة اتشالت (نفس الصورة أو نفس المجموعة اللونية): {len(dropped)}")
     log(f"الإجمالي: {len(items)} صنف")
