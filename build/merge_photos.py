@@ -375,6 +375,19 @@ def main():
     if nomat:
         log(f"!! أكواد خامة مش في الشجرة: {nomat}")
 
+    # علامة "منتج جديد": build/new_products.json
+    npf = os.path.join(ROOT, "build", "new_products.json")
+    newp = {str(c).strip().lstrip("0") for c in json.load(open(npf, encoding="utf-8")).get("codes", [])} \
+        if os.path.exists(npf) else set()
+    for it in items:
+        if it["c"] in newp:
+            it["n"] = 1
+        else:
+            it.pop("n", None)
+    miss_new = sorted(newp - {it["c"] for it in items})
+    log(f"منتج جديد: {sum(1 for it in items if it.get('n'))} صنف"
+        + (f" — مش ظاهرين في الكتالوج: {miss_new}" if miss_new else ""))
+
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)

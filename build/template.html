@@ -88,6 +88,10 @@ img{max-width:100%}
 .lb-img .ph img{width:40%;max-height:none}
 .pendbtn{border:1px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-inline-start:8px}
 .pendbtn[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.newb{position:absolute;top:8px;inset-inline-end:8px;background:#1E9E57;color:#fff;font-size:11.5px;font-weight:700;
+  padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:1}
+.newtag{display:inline-block;background:#1E9E57;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
+.newbtn[aria-pressed="true"]{background:#1E9E57;border-color:#1E9E57;color:#fff}
 .low{position:absolute;top:8px;inset-inline-start:8px;background:#D7263D;color:#fff;font-size:11.5px;font-weight:700;
   padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .qty.is-low{border-color:#D7263D;color:#D7263D}
@@ -288,6 +292,7 @@ img{max-width:100%}
   }
 
   var shown=[];
+  var onlyNew=false, NEWN=ITEMS.filter(function(it){ return it.n; }).length;
   var onlyPend=false, PENDN=ITEMS.filter(function(it){ return it.s==='pending'; }).length;
   function filtered(){
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
@@ -295,6 +300,7 @@ img{max-width:100%}
       if(active && it.r!==active) return false;
       if(mat && it.k!==mat) return false;
       if(onlyPend && !isPending(it)) return false;
+      if(onlyNew && !it.n) return false;
       if(!raw) return true;
       if(d && it.c.indexOf(d)!==-1) return true;
       if(t && it._t.indexOf(t)!==-1) return true;
@@ -325,6 +331,7 @@ img{max-width:100%}
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+' صور</span>' : '';
     b.innerHTML=(isLow(it)?'<span class="low">كمية قليلة</span>':'')+
+      (it.n?'<span class="newb">منتج جديد</span>':'')+
       (isPending(it) ? PH : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">')+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
       '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
@@ -344,8 +351,11 @@ img{max-width:100%}
     countEl.innerHTML = (shown.length===ITEMS.length
       ? 'كل الأصناف — <b>'+ITEMS.length+'</b> صنف'
       : '<b>'+shown.length+'</b> من '+ITEMS.length+' صنف')
-      + (PENDN ? '<button type="button" class="pendbtn" aria-pressed="'+onlyPend+'">جاري التصوير '+PENDN+'</button>' : '');
-    var pb=countEl.querySelector('.pendbtn');
+      + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">منتج جديد '+NEWN+'</button>' : '')
+      + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">جاري التصوير '+PENDN+'</button>' : '');
+    var nb=countEl.querySelector('.newbtn');
+    if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; render(); });
+    var pb=countEl.querySelector('.pendbtn.pend');
     if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; render(); });
   }
 
@@ -388,7 +398,7 @@ img{max-width:100%}
       '<button class="gnav prev" type="button" data-a="gprev" aria-label="الصورة السابقة">&#8250;</button>'+
       '<button class="gnav next" type="button" data-a="gnext" aria-label="الصورة التالية">&#8249;</button>'+
       '<span class="gcount" dir="ltr"></span></div><div class="lb-side">'+
-      '<div class="lb-head"><div><p class="lb-title">كود الصنف</p><div class="lb-code"></div></div>'+
+      '<div class="lb-head"><div><p class="lb-title">كود الصنف<span class="newtag" hidden>منتج جديد</span></p><div class="lb-code"></div></div>'+
       '<button class="x" type="button" data-a="close" aria-label="إغلاق">×</button></div>'+
       '<dl class="kv">'+
       '<dt>الريشيو</dt><dd><span class="bigbadge"></span></dd>'+
@@ -477,6 +487,7 @@ img{max-width:100%}
     var it=shown[idx]; if(!it) return;
     gi=0; showPic();
     lb.querySelector('.lb-code').textContent=it.c;
+    lb.querySelector('.lb-title .newtag').hidden=!it.n;
     lb.querySelector('.bigbadge').textContent=it.r;
     lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (isLow(it) ? '<span class="lowtag">كمية قليلة</span>' : '');
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
