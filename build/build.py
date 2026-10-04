@@ -432,6 +432,9 @@ def write_page(items, source_name):
         if token not in html:
             sys.exit(f"قالب الصفحة build/template.html مفيهوش {token}")
     html = html.replace("__DATA__", json.dumps(items, ensure_ascii=False))
+    # أصناف الـPDF الأساسية - merge_photos.py بيبني عليها كل مرة
+    json.dump(items, open(os.path.join(ROOT, "build", "pdf_items.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=0)
     html = html.replace("__SOURCE__", source_name.replace('"', "'"))
     from datetime import datetime
     from zoneinfo import ZoneInfo

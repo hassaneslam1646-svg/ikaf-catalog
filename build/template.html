@@ -105,6 +105,7 @@ img{max-width:100%}
 .qty{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
   font-size:11.5px;padding:2px 7px;border-radius:6px;white-space:nowrap}
 .qty b{font-family:var(--num);font-weight:700}
+.model .clr{color:var(--ink);font-weight:700}
 .model{color:var(--muted);font-size:12px;line-height:1.35;overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
@@ -249,7 +250,7 @@ img{max-width:100%}
   function digits(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];}).replace(/\D+/g,''); }
   function norm(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];})
     .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim().toLowerCase(); }
-  ITEMS.forEach(function(it){ it.k = it.k || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k); });
+  ITEMS.forEach(function(it){ it.k = it.k || ''; it.cl = it.cl || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl); });
 
   var active=null, mat=null;
   var matsEl=document.getElementById('mats');
@@ -336,7 +337,7 @@ img{max-width:100%}
       (isPending(it) ? PH : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="صنف كود '+it.c+'">')+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
       '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
-      '<span class="model">'+it.m+'</span></span>';
+      '<span class="model">'+it.m+(it.cl?' · <b class="clr">'+it.cl+'</b>':'')+'</span></span>';
     b.addEventListener('click',function(){ open(shown.indexOf(it)); });
     return b;
   }
@@ -407,6 +408,7 @@ img{max-width:100%}
       '<dt>اسم الريشيو</dt><dd class="v-rn"></dd>'+
       '<dt>الموديل</dt><dd class="v-m"></dd>'+
       '<dt class="k-k">الخامة</dt><dd class="v-k"></dd>'+
+      '<dt class="k-cl">اللون</dt><dd class="v-cl"></dd>'+
       '<dt class="k-p">الصفحة</dt><dd class="v-p n"></dd></dl>'+
       '<div class="addrow"><label for="addq">الكمية المطلوبة</label>'+
       '<input id="addq" type="text" inputmode="decimal" autocomplete="off" placeholder="0">'+
@@ -439,6 +441,7 @@ img{max-width:100%}
   function waText(it){
     var lines=['كود: '+it.c,'الريشيو: '+it.r,'الموديل: '+it.m];
     if(it.k) lines.push('الخامة: '+it.k);
+    if(it.cl) lines.push('اللون: '+it.cl);
     return lines.join('\n');
   }
   function toJpeg(src){
@@ -500,6 +503,8 @@ img{max-width:100%}
     lb.querySelector('.v-m').textContent=it.m;
     lb.querySelector('.v-k').textContent=it.k;
     lb.querySelector('.v-k').hidden = lb.querySelector('.k-k').hidden = !it.k;
+    lb.querySelector('.v-cl').textContent=it.cl;
+    lb.querySelector('.v-cl').hidden = lb.querySelector('.k-cl').hidden = !it.cl;
     lb.querySelector('.v-p').textContent=it.p;
     lb.querySelector('.v-p').hidden = lb.querySelector('.k-p').hidden = (it.p==null);
     var inC=cart[it.c];
@@ -594,7 +599,7 @@ img{max-width:100%}
       var it=BYCODE[c], over = it.q!=null && cart[c]>it.q;
       var row=document.createElement('div'); row.className='ci';
       row.innerHTML=(isPending(it)?'<img alt="" src="logo.png" style="object-fit:contain;background:#1A2150;padding:6px">':'<img alt="" src="'+thumbSrc(it)+'">')+
-        '<div><div class="c">'+c+'</div><div class="d">'+it.r+' · '+it.m+(it.k?' · '+it.k:'')+'</div>'+
+        '<div><div class="c">'+c+'</div><div class="d">'+it.r+' · '+it.m+(it.k?' · '+it.k:'')+(it.cl?' · '+it.cl:'')+'</div>'+
         '<div class="d'+(over?' warn':'')+'">المتاح '+(it.q==null?'—':it.q)+(over?' — المطلوب أكتر من المتاح':'')+'</div></div>'+
         '<div class="ctl"><input type="text" inputmode="decimal" autocomplete="off" data-code="'+c+'" value="'+cart[c]+'" aria-label="الكمية">'+
         '<button class="rm" type="button" data-c="rm" data-code="'+c+'">حذف</button></div>';
@@ -609,7 +614,7 @@ img{max-width:100%}
   function stamp(){ var d=new Date(); return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function rows(){
     return Object.keys(cart).map(function(c,i){ var it=BYCODE[c];
-      return {n:i+1, c:c, r:it.r, m:it.m, k:it.k||'', q:cart[c], a:it.q}; });
+      return {n:i+1, c:c, r:it.r, m:it.m, k:it.k||'', cl:it.cl||'', q:cart[c], a:it.q}; });
   }
   function loadXlsx(){
     if(window.XLSX) return Promise.resolve(window.XLSX);
@@ -622,14 +627,14 @@ img{max-width:100%}
     var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     var aoa=[['طلب مندوب — شركة اكاف العربية'],['المندوب',rep||''],['التاريخ',when]];
     if(notes) aoa.push(['ملاحظات',notes]);
-    aoa.push([]); aoa.push(['م','الكود','الريشيو','الموديل','الخامة','الكمية المطلوبة','المتاح وقت الطلب']);
-    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.q, r.a]); });
-    aoa.push(['','الإجمالي','','','',R.reduce(function(a,r){return a+r.q;},0),'']);
+    aoa.push([]); aoa.push(['م','الكود','الريشيو','الموديل','الخامة','اللون','الكمية المطلوبة','المتاح وقت الطلب']);
+    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.q, r.a]); });
+    aoa.push(['','الإجمالي','','','','',R.reduce(function(a,r){return a+r.q;},0),'']);
     return loadXlsx().then(function(X){
       var ws=X.utils.aoa_to_sheet(aoa);
       // الكود كنص عشان الأرقام الطويلة ماتتغيرش
       R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:aoa.length-R.length-1+i, c:1}); ws[ref]={t:'s', v:r.c}; });
-      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:14},{wch:16}];
+      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:16}];
       var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'الطلب');
       var out=X.write(wb,{bookType:'xlsx',type:'array'});
       return new File([out], base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});

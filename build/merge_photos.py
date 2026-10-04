@@ -38,6 +38,7 @@ FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
 STOCK_SHEET = "المخزون"
 STOCK_COL = "المستودعات الرئيسية"  # بعد توحيد المسافات
+STOCK_COLS = [STOCK_COL, "كميات المخازن الرئيسية"]   # أسماء عمود الإجمالي في التقارير المختلفة
 # المخازن اللي مجموعها = المستودعات الرئيسية (عمود في التقرير -> الاسم اللي بيظهر للمندوب)
 WAREHOUSES = [("الانتاج التام(الرياض", "الرياض"), ("م جدة الرئيسى", "جدة"),
               ("مستودع مكة المكرمة", "مكة")]
@@ -62,6 +63,20 @@ def load_materials(xlsx):
     return out
 
 
+def load_colors(xlsx):
+    """الألوان من شيت ARABIC: العمود O اسم اللون، P كوده (خانة 11 من الكود)."""
+    ws = openpyxl.load_workbook(xlsx, data_only=True)["ARABIC"]
+    out = {}
+    for r in range(4, ws.max_row + 1):
+        name, code = ws[f"O{r}"].value, ws[f"P{r}"].value
+        if name is None or code is None or not str(name).strip():
+            continue
+        code = str(code).strip()
+        if re.fullmatch(r"\d", code):
+            out[code] = " ".join(str(name).split())
+    return out
+
+
 def _norm(h):
     return " ".join(str(h).split()) if h is not None else ""
 
@@ -81,18 +96,22 @@ def load_stock(xlsx):
             if "كود الصنف" not in head:
                 continue
             ci = head.index("كود الصنف")
-            qi = head.index(STOCK_COL) if STOCK_COL in head else None
+            qcol = next((c for c in STOCK_COLS if c in head), None)
+            qi = head.index(qcol) if qcol else None
             wcols = [(head.index(n), lbl) for n, (_, lbl) in zip(wnames, WAREHOUSES) if n in head]
             if qi is None and not wcols:
                 continue
             log(f"تقرير المخزون: شيت '{name}'، الكمية من "
-                + (f"'{STOCK_COL}'" if qi is not None else "مجموع المخازن الرئيسية"))
+                + (f"'{qcol}'" if qi is not None else "مجموع المخازن الرئيسية"))
             ti = head.index("التصنيف") if "التصنيف" in head else None
-            return _read_rows(rows[hi + 1:], ci, qi, wcols, ti)
+            ni = head.index("اسم الصنف") if "اسم الصنف" in head else None
+            if ti is None and ni is not None:
+                log("مفيش عمود 'التصنيف' - الجلابية بتتعرف من اسم الصنف (أي اسم فيه 'ثوب' = ثوب)")
+            return _read_rows(rows[hi + 1:], ci, qi, wcols, ti, ni)
     sys.exit("مش لاقي في تقرير المخزون عمود 'كود الصنف' ومعاه 'المستودعات الرئيسية' أو أعمدة المخازن")
 
 
-def _read_rows(rows, ci, qi, wcols, ti=None):
+def _read_rows(rows, ci, qi, wcols, ti=None, ni=None):
     out = {}
     for r in rows:
         if r is None or ci >= len(r) or r[ci] is None:
@@ -108,6 +127,8 @@ def _read_rows(rows, ci, qi, wcols, ti=None):
         out[code] = out.get(code, 0) + q
         if ti is not None and ti < len(r) and r[ti]:
             CAT[code] = _norm(r[ti])
+        elif ti is None and ni is not None and ni < len(r) and r[ni]:
+            CAT[code] = "ثوب" if "ثوب" in str(r[ni]) else "جلابيه"
         w = WH.setdefault(code, {})
         for lbl, v in ws.items():
             w[lbl] = w.get(lbl, 0) + v
@@ -239,6 +260,7 @@ def main():
 
     models, ratios = load_tree(tree_xlsx)
     materials = load_materials(tree_xlsx)
+    colors = load_colors(tree_xlsx)
     stock = load_stock(stock_xlsx)
     overrides = load_overrides()
     for c, q in overrides.items():
@@ -261,11 +283,21 @@ def main():
     log(f"الصور: {sum(len(v) for v in photos.values())} صورة لـ {len(photos)} كود")
 
     items, source = read_items()
+    # أصناف الـPDF الأساسية محفوظة في build/pdf_items.json (build.py بيكتبه)، عشان الصنف اللي
+    # اتشال عشان رصيده قل يرجع لوحده لما الرصيد يزيد
+    base = os.path.join(ROOT, "build", "pdf_items.json")
+    if os.path.exists(base):
+        items = json.load(open(base, encoding="utf-8"))
+    else:
+        items = [it for it in items if it.get("s") not in ("photo", "pending")]
+        for it in items:
+            for k in ("g", "w", "n", "k", "cl"):
+                it.pop(k, None)
+        json.dump(items, open(base, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     excluded = load_excluded()
     if excluded:
         log(f"أكواد متشالة بطلب المستخدم: {sorted(excluded)}")
     items = [it for it in items if it["c"] not in excluded]
-    items = [it for it in items if it.get("s") not in ("photo", "pending")]   # من تشغيل سابق
     for it in items:
         it.pop("g", None)
 
@@ -343,6 +375,8 @@ def main():
             pdf_no_stock.append(it["c"])
         if old != it["q"]:
             qty_changed.append((it["c"], old, it["q"]))
+        if it["q"] < MIN_QTY:
+            it["_drop"] = True
         g = gallery(it["c"], it.get("p"))
         if g:
             it["g"] = g
@@ -392,8 +426,14 @@ def main():
     nomat = sorted({it["c"][1:3] for it in items if it["c"][1:3] not in materials})
     for it in items:
         it["k"] = materials.get(it["c"][1:3], "")
+        it["cl"] = colors.get(it["c"][10], "") if len(it["c"]) == 14 else ""
     if nomat:
         log(f"!! أكواد خامة مش في الشجرة: {nomat}")
+
+    pdf_low = [(it["c"], it["q"]) for it in items if it.get("_drop")]
+    items = [it for it in items if not it.get("_drop")]
+    if pdf_low:
+        log(f"أصناف PDF اتشالت عشان رصيدها أقل من {MIN_QTY}: {pdf_low}")
 
     # علامة "منتج جديد": build/new_products.json
     npf = os.path.join(ROOT, "build", "new_products.json")
