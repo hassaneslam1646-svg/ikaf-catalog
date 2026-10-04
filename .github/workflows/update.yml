@@ -1,5 +1,6 @@
 # تحديث المخزون تلقائي + نشر الموقع
 # - لو اترفع ملف إكسيل في فولدر stock/ : الكميات بتتحدث منه، والملف بيتشال، والموقع بيتنشر
+# - لو اترفعت صور في build/photos_src (باسم الكود) : الموقع بيتبني تاني بآخر مخزون (build/stock_latest.xlsx)
 # - أي تعديل تاني على main : الموقع بيتنشر زي ما هو
 # محتاج مرة واحدة: Settings → Pages → Source = GitHub Actions
 name: update-stock
@@ -24,24 +25,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 20
-      - name: Update stock from uploaded report
+      - name: Rebuild (new stock report or new photos)
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
           shopt -s nullglob nocaseglob
           files=(stock/*.xlsx stock/*.xls)
-          if [ ${#files[@]} -eq 0 ]; then echo "مفيش تقرير مخزون جديد"; exit 0; fi
-          newest=""; best=0
-          for f in "${files[@]}"; do
-            t=$(git log -1 --format=%ct -- "$f"); t=${t:-0}
-            if [ "$t" -ge "$best" ]; then best=$t; newest="$f"; fi
-          done
-          echo "التقرير: $newest"
+          changed=""
+          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
+            changed=$(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/overrides.json build/excluded.json build/drop_photos.json build/template.html)
+          fi
+          if [ ${#files[@]} -eq 0 ] && [ -z "$changed" ]; then echo "مفيش تقرير مخزون ولا صور جديدة"; exit 0; fi
           pip install --quiet pillow numpy scipy openpyxl pypdf reportlab
-          python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock
-          git rm -q -- "${files[@]}"
+          if [ ${#files[@]} -gt 0 ]; then
+            newest=""; best=0
+            for f in "${files[@]}"; do
+              t=$(git log -1 --format=%ct -- "$f"); t=${t:-0}
+              if [ "$t" -ge "$best" ]; then best=$t; newest="$f"; fi
+            done
+            echo "تقرير مخزون جديد: $newest"
+            python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock
+            git rm -q -- "${files[@]}"
+            msg="تحديث المخزون تلقائي من $(basename "$newest")"
+          else
+            echo "اتغير: $changed"
+            python3 build/merge_photos.py build/photos_src build/stock_latest.xlsx build/tree.xlsx
+            msg="تحديث الصور تلقائي"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -q -m "تحديث المخزون تلقائي من $(basename "$newest")"
+          if git diff --cached --quiet; then echo "مفيش تغيير"; exit 0; fi
+          git commit -q -m "$msg"
           git push
       - name: Prepare site
         run: |

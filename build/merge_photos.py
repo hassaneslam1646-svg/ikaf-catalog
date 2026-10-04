@@ -46,7 +46,8 @@ WH = {}   # الكود -> {المخزن: الكمية}
 CAT = {}  # الكود -> التصنيف (من عمود "التصنيف" في التقرير لو موجود)
 PENDING_CATS = {"جلابيه", "جلابية"}   # الأصناف المتعرضة "جاري التصوير" لو مالهاش صورة
 
-NAME_RE = re.compile(r"^(1\d{13})(?:_(\d+))?\.(jpe?g|png|webp)$", re.I)
+# اسم الصورة = الكود 14 رقم، ومسموح بأصفار قبله وأي زيادة بعده: 0104...jpg / 1042... (2).jpg / 1042..._2.jpg
+NAME_RE = re.compile(r"^\s*0*(1\d{13})(.*?)\.(jpe?g|png|webp)$", re.I)
 
 
 def load_materials(xlsx):
@@ -133,6 +134,24 @@ def _read_rows(rows, ci, qi, wcols, ti=None, ni=None):
         for lbl, v in ws.items():
             w[lbl] = w.get(lbl, 0) + v
     return out
+
+
+SNAPSHOT = os.path.join(ROOT, "build", "stock_latest.xlsx")
+
+
+def save_snapshot(stock):
+    """نسخة مختصرة من آخر تقرير مخزون (الكود + التصنيف + المخازن الرئيسية بس، من غير أسعار)
+    عشان رفع الصور لوحده يقدر يعيد بناء الموقع من غير تقرير جديد."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = STOCK_SHEET
+    labels = [lbl for _, lbl in WAREHOUSES]
+    ws.append(["كود الصنف", "التصنيف"] + [c for c, _ in WAREHOUSES] + [STOCK_COL])
+    for code in sorted(stock):
+        w = WH.get(code, {})
+        ws.append([code, CAT.get(code, "")] + [w.get(l, 0) for l in labels] + [stock[code]])
+        ws.cell(ws.max_row, 1).number_format = "@"
+    wb.save(SNAPSHOT)
 
 
 def wh_split(code, total):
@@ -262,6 +281,8 @@ def main():
     materials = load_materials(tree_xlsx)
     colors = load_colors(tree_xlsx)
     stock = load_stock(stock_xlsx)
+    if NEW_STOCK:
+        save_snapshot(stock)
     overrides = load_overrides()
     for c, q in overrides.items():
         log(f"كمية متعدّلة يدويًا: {c} = {q} (التقرير: {stock.get(c)})")
@@ -277,9 +298,10 @@ def main():
             if not fn.lower().endswith(".csv"):
                 skipped.append(fn)
             continue
-        photos.setdefault(m.group(1), []).append((int(m.group(2) or 1), fn))
+        rest = m.group(2).strip()
+        photos.setdefault(m.group(1), []).append(((0 if not rest else 1), rest, fn))
     for c in photos:
-        photos[c] = [fn for _, fn in sorted(photos[c])]
+        photos[c] = [x[-1] for x in sorted(photos[c])]
     log(f"الصور: {sum(len(v) for v in photos.values())} صورة لـ {len(photos)} كود")
 
     items, source = read_items()
@@ -353,7 +375,7 @@ def main():
                 dropped.append(fn)
                 continue
             kept.append(sig)
-            name = os.path.splitext(fn)[0]
+            name = code if not names else f"{code}_{len(names) + 1}"   # اسم نضيف للموقع
             save_image(src, name)
             names.append(name)
         done[code] = names
