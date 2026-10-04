@@ -283,6 +283,14 @@ def main():
     stock = load_stock(stock_xlsx)
     if NEW_STOCK:
         save_snapshot(stock)
+    # أكواد كميتها في التقرير بالقطعة: بتتحول لدرازن (÷12) - build/pieces_codes.txt (كود في كل سطر)
+    pcf = os.path.join(ROOT, "build", "pieces_codes.txt")
+    if os.path.exists(pcf):
+        for c in re.findall(r"0*(1\d{13})", open(pcf, encoding="utf-8").read()):
+            if c in stock:
+                log(f"قطعة ← درزن: {c} = {stock[c]} قطعة ← {stock[c] / 12:g} درزن")
+                stock[c] = stock[c] / 12
+                WH[c] = {k: v / 12 for k, v in WH.get(c, {}).items()}
     overrides = load_overrides()
     for c, q in overrides.items():
         log(f"كمية متعدّلة يدويًا: {c} = {q} (التقرير: {stock.get(c)})")
