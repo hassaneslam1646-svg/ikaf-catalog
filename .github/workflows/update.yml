@@ -33,7 +33,7 @@ jobs:
           files=(stock/*.xlsx stock/*.xls)
           changed=""
           if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
-            changed=$(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/overrides.json build/excluded.json build/drop_photos.json build/template.html)
+            changed=$(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html)
           fi
           if [ ${#files[@]} -eq 0 ] && [ -z "$changed" ]; then echo "مفيش تقرير مخزون ولا صور جديدة"; exit 0; fi
           pip install --quiet pillow numpy scipy openpyxl pypdf reportlab

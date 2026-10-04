@@ -461,6 +461,10 @@ def main():
     npf = os.path.join(ROOT, "build", "new_products.json")
     newp = {str(c).strip().lstrip("0") for c in json.load(open(npf, encoding="utf-8")).get("codes", [])} \
         if os.path.exists(npf) else set()
+    # كمان ملف نصي بسيط: كود في كل سطر (أسهل في التعديل من GitHub)
+    npt = os.path.join(ROOT, "build", "new_products.txt")
+    if os.path.exists(npt):
+        newp |= set(re.findall(r"0*(1\d{13})", open(npt, encoding="utf-8").read()))
     for it in items:
         if it["c"] in newp:
             it["n"] = 1
