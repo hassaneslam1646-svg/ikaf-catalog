@@ -1,5 +1,5 @@
 # تحديث المخزون تلقائي + نشر الموقع
-# - لو اترفع ملف إكسيل في فولدر stock/ : الكميات بتتحدث منه، والملف بيتشال، والموقع بيتنشر
+# - لو اترفع ملف إكسيل في فولدر stock/ أو في الصفحة الرئيسية للريبو: الكميات بتتحدث منه، والملف بيتشال، والموقع بيتنشر
 # - لو اترفعت صور في build/photos_src (باسم الكود) : الموقع بيتبني تاني بآخر مخزون (build/stock_latest.xlsx)
 # - أي تعديل تاني على main : الموقع بيتنشر زي ما هو
 # محتاج مرة واحدة: Settings → Pages → Source = GitHub Actions
@@ -30,7 +30,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           shopt -s nullglob nocaseglob
-          files=(stock/*.xlsx stock/*.xls)
+          files=(stock/*.xlsx stock/*.xls *.xlsx *.xls)   # فولدر stock أو الصفحة الرئيسية للريبو
           changed=""
           if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
             changed=$(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/pieces_codes.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html)
