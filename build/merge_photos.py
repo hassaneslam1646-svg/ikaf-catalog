@@ -43,6 +43,7 @@ STOCK_COLS = [STOCK_COL, "كميات المخازن الرئيسية"]   # أس�
 WAREHOUSES = [("الانتاج التام(الرياض", "الرياض"), ("م جدة الرئيسى", "جدة"),
               ("مستودع مكة المكرمة", "مكة")]
 WH = {}   # الكود -> {المخزن: الكمية}
+UNIT = {}  # الكود -> الوحدة (من عمود "الوحدة" لو موجود)
 CAT = {}  # الكود -> التصنيف (من عمود "التصنيف" في التقرير لو موجود)
 PENDING_CATS = {"جلابيه", "جلابية"}   # الأصناف المتعرضة "جاري التصوير" لو مالهاش صورة
 
@@ -106,13 +107,14 @@ def load_stock(xlsx):
                 + (f"'{qcol}'" if qi is not None else "مجموع المخازن الرئيسية"))
             ti = head.index("التصنيف") if "التصنيف" in head else None
             ni = head.index("اسم الصنف") if "اسم الصنف" in head else None
+            ui = head.index("الوحدة") if "الوحدة" in head else None
             if ti is None and ni is not None:
                 log("مفيش عمود 'التصنيف' - الجلابية بتتعرف من اسم الصنف (أي اسم فيه 'ثوب' = ثوب)")
-            return _read_rows(rows[hi + 1:], ci, qi, wcols, ti, ni)
+            return _read_rows(rows[hi + 1:], ci, qi, wcols, ti, ni, ui)
     sys.exit("مش لاقي في تقرير المخزون عمود 'كود الصنف' ومعاه 'المستودعات الرئيسية' أو أعمدة المخازن")
 
 
-def _read_rows(rows, ci, qi, wcols, ti=None, ni=None):
+def _read_rows(rows, ci, qi, wcols, ti=None, ni=None, ui=None):
     out = {}
     for r in rows:
         if r is None or ci >= len(r) or r[ci] is None:
@@ -126,6 +128,8 @@ def _read_rows(rows, ci, qi, wcols, ti=None, ni=None):
         else:
             q = sum(ws.values())
         out[code] = out.get(code, 0) + q
+        if ui is not None and ui < len(r) and r[ui]:
+            UNIT[code] = _norm(r[ui])
         if ti is not None and ti < len(r) and r[ti]:
             CAT[code] = _norm(r[ti])
         elif ti is None and ni is not None and ni < len(r) and r[ni]:
@@ -146,10 +150,10 @@ def save_snapshot(stock):
     ws = wb.active
     ws.title = STOCK_SHEET
     labels = [lbl for _, lbl in WAREHOUSES]
-    ws.append(["كود الصنف", "التصنيف"] + [c for c, _ in WAREHOUSES] + [STOCK_COL])
+    ws.append(["كود الصنف", "التصنيف", "الوحدة"] + [c for c, _ in WAREHOUSES] + [STOCK_COL])
     for code in sorted(stock):
         w = WH.get(code, {})
-        ws.append([code, CAT.get(code, "")] + [w.get(l, 0) for l in labels] + [stock[code]])
+        ws.append([code, CAT.get(code, ""), UNIT.get(code, "")] + [w.get(l, 0) for l in labels] + [stock[code]])
         ws.cell(ws.max_row, 1).number_format = "@"
     wb.save(SNAPSHOT)
 
@@ -284,10 +288,12 @@ def main():
     if NEW_STOCK:
         save_snapshot(stock)
     # أكواد كميتها في التقرير بالقطعة: بتتحول لدرازن (÷12) - build/pieces_codes.txt (كود في كل سطر)
+    # التحويل بيحصل بس لو عمود "الوحدة" في التقرير مكتوب فيه قطعة (أو مفيش عمود وحدة)،
+    # عشان لو التقرير نفسه اتصلح وبقى بالدرزن مايتقسمش مرتين
     pcf = os.path.join(ROOT, "build", "pieces_codes.txt")
     if os.path.exists(pcf):
         for c in re.findall(r"0*(1\d{13})", open(pcf, encoding="utf-8").read()):
-            if c in stock:
+            if c in stock and UNIT.get(c, "قطعة") in ("قطعة", "قطعه"):
                 log(f"قطعة ← درزن: {c} = {stock[c]} قطعة ← {stock[c] / 12:g} درزن")
                 stock[c] = stock[c] / 12
                 WH[c] = {k: v / 12 for k, v in WH.get(c, {}).items()}
