@@ -519,7 +519,9 @@ def main():
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
-    tpl = tpl.replace("__UPDATED__", stock_date(NEW_STOCK))
+    # التاريخ والوقت في مربعين منفصلين (من غير الشرطة اللي في النص)
+    upd = stock_date(NEW_STOCK)
+    tpl = tpl.replace("__UPDATED__", "".join(f'<span class="dt">{x.strip()}</span>' for x in upd.split("|") if x.strip()))
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(tpl)
 
     pdf_items = [it for it in items if it.get("s") not in ("photo", "pending")]

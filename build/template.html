@@ -47,7 +47,11 @@ img{max-width:100%}
 .org{color:rgba(255,255,255,.72);font-size:12.5px;font-weight:500}
 .logo{height:64px;width:auto;margin-inline-start:auto;flex:0 0 auto}
 .mark{font-weight:800;font-size:15px;display:inline-flex;align-items:center;gap:8px}
-.mark .date{font-family:var(--num);font-weight:600;font-size:13px;color:var(--orange);direction:rtl;unicode-bidi:isolate}
+.mark{flex-wrap:wrap;row-gap:6px}
+.mark .ttl{white-space:nowrap}
+.mark .date{display:inline-flex;align-items:center;gap:6px;margin-inline-start:12px}
+.mark .dt{font-family:var(--num);font-weight:600;font-size:12.5px;color:var(--orange);border:1.5px solid rgba(255,255,255,.9);
+  border-radius:8px;padding:2px 9px;line-height:1.4;direction:rtl;unicode-bidi:isolate;white-space:nowrap}
 .mark .dash{width:22px;height:3px;background:var(--orange);border-radius:2px}
 .sub{color:rgba(255,255,255,.55);font-size:12px}
 .searchwrap{position:relative;display:flex;align-items:center}
@@ -208,7 +212,7 @@ img{max-width:100%}
     <div class="brandrow">
       <div class="titles">
         <span class="org">شركة اكاف العربية - إدارة سلسلة الامداد</span>
-        <span class="mark"><span class="dash"></span>تحديث المخزون <span class="date">__UPDATED__</span></span>
+        <span class="mark"><span class="dash"></span><span class="ttl">تحديث المخزون</span><span class="date">__UPDATED__</span></span>
         <span class="sub" id="total"></span>
       </div>
       <img class="logo" src="logo.png" alt="إكاف IKAF" width="203" height="160">
