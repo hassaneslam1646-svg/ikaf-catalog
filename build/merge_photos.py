@@ -65,6 +65,20 @@ def load_materials(xlsx):
     return out
 
 
+def load_brands(xlsx):
+    """الماركات من شيت ARABIC: العمود E اسم الماركة، F كودها (خانة 4 من الكود)."""
+    ws = openpyxl.load_workbook(xlsx, data_only=True)["ARABIC"]
+    out = {}
+    for r in range(4, ws.max_row + 1):
+        name, code = ws[f"E{r}"].value, ws[f"F{r}"].value
+        if name is None or code is None or not str(name).strip():
+            continue
+        code = str(code).strip()
+        if re.fullmatch(r"\d", code):
+            out[code] = " ".join(str(name).split())
+    return out
+
+
 def load_colors(xlsx):
     """الألوان من شيت ARABIC: العمود O اسم اللون، P كوده (خانة 11 من الكود)."""
     ws = openpyxl.load_workbook(xlsx, data_only=True)["ARABIC"]
@@ -180,8 +194,20 @@ def stock_date(new_stock):
     """تاريخ آخر تحديث للمخزون. بيتغير لتاريخ النهارده بس لما يكون فيه تقرير مخزون جديد (--new-stock)،
     وغير كده بيفضل زي ما هو (تعديل الشكل أو الصور مش بيغيّر التاريخ)."""
     if new_stock or not os.path.exists(DATE_FILE):
-        open(DATE_FILE, "w", encoding="utf-8").write(today() + "\n")
+        open(DATE_FILE, "w", encoding="utf-8").write(stamp_now() + "\n")
     return open(DATE_FILE, encoding="utf-8").read().strip()
+
+
+def stamp_now():
+    """تاريخ ووقت رفع ملف الكميات بتوقيت مكة: 8-10-2026 | 2:51 م.
+    الوقت من STOCK_TS (وقت رفع الملف على GitHub) لو موجود، وإلا دلوقتي."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    ts = os.environ.get("STOCK_TS")
+    tz = ZoneInfo("Asia/Riyadh")
+    d = datetime.fromtimestamp(int(ts), tz) if ts and ts.isdigit() else datetime.now(tz)
+    h = d.hour % 12 or 12
+    return f"{d.day}-{d.month}-{d.year} | {h}:{d.minute:02d} {'ص' if d.hour < 12 else 'م'}"
 
 
 def today():
@@ -284,6 +310,7 @@ def main():
     models, ratios = load_tree(tree_xlsx)
     materials = load_materials(tree_xlsx)
     colors = load_colors(tree_xlsx)
+    brands = load_brands(tree_xlsx)
     stock = load_stock(stock_xlsx)
     if NEW_STOCK:
         save_snapshot(stock)
@@ -463,6 +490,7 @@ def main():
     for it in items:
         it["k"] = materials.get(it["c"][1:3], "")
         it["cl"] = colors.get(it["c"][10], "") if len(it["c"]) == 14 else ""
+        it["b"] = brands.get(it["c"][3], "") if len(it["c"]) == 14 else ""
     if nomat:
         log(f"!! أكواد خامة مش في الشجرة: {nomat}")
 

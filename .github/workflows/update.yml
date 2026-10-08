@@ -44,6 +44,7 @@ jobs:
               if [ "$t" -ge "$best" ]; then best=$t; newest="$f"; fi
             done
             echo "تقرير مخزون جديد: $newest"
+            export STOCK_TS="$best"   # وقت رفع الملف - بيظهر جنب التاريخ
             python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock
             git rm -q -- "${files[@]}"
             msg="تحديث المخزون تلقائي من $(basename "$newest")"
