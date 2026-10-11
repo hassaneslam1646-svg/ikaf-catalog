@@ -196,6 +196,24 @@ img{max-width:100%}
 .cart-foot .btn.wa{flex:1 1 auto;justify-content:center;font-size:15px;padding:12px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#171B33;color:#fff;padding:10px 16px;border-radius:10px;
   font-size:14px;z-index:90;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+/* ---------- جدول المتاح بكميات قليلة ---------- */
+.lowsec{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.lowhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.lowhead h2{margin:0;font-size:15px}
+.lowhead .sub2{color:var(--muted);font-size:12.5px;flex-basis:100%}
+.lowhead .btn{margin-inline-start:auto;padding:6px 12px;font-size:13px}
+.lowtbl{width:100%;border-collapse:collapse;font-size:13px}
+.lowtbl th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-weight:500;font-size:12px;text-align:start;padding:8px 10px;border-bottom:1px solid var(--line)}
+.lowtbl td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.lowtbl tr.r{cursor:pointer}
+.lowtbl tr.r:hover td{background:var(--surface-2)}
+.lowtbl .c{font-family:var(--num);font-weight:600;direction:ltr;text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lowtbl .d{color:var(--muted);font-size:12px;line-height:1.35}
+.lowtbl .d b{color:var(--ink);font-weight:700}
+.lowtbl .qn{font-family:var(--num);font-weight:700;text-align:center;white-space:nowrap}
+.lowtbl .badge{display:inline-block}
+.lowtbl .inc{color:#1E8E4E;font-size:11px;font-weight:700;display:block}
+.lowempty{padding:16px;color:var(--muted);text-align:center;font-size:13px}
 @media (max-width:640px){
   .lb{padding:10px}
   .lb-box{flex-direction:column;overflow-y:auto}
@@ -235,9 +253,16 @@ img{max-width:100%}
     <b>مفيش كود مطابق</b>
     جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).
   </div>
+  <section class="lowsec" id="lowsec" hidden>
+    <div class="lowhead"><h2>متاح بكميات قليلة <span class="n" id="lown"></span></h2>
+      <button type="button" class="btn" id="lowtgl"></button>
+      <span class="sub2">أصناف رصيدها أقل من 20 درزن — من غير صور، متاحة للبيع. اضغط على الصنف لتفاصيله أو لإضافته للسلة.</span></div>
+    <div id="lowbody"></div>
+  </section>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
+<script id="lowdata" type="application/json">__LOWDATA__</script>
 <script>
 (function(){
   var ITEMS = JSON.parse(document.getElementById('data').textContent);
@@ -254,7 +279,8 @@ img{max-width:100%}
   function digits(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];}).replace(/\D+/g,''); }
   function norm(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];})
     .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim().toLowerCase(); }
-  ITEMS.forEach(function(it){ it.k = it.k || ''; it.cl = it.cl || ''; it.b = it.b || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl+' '+it.b); });
+  var LOWS = []; try{ LOWS = JSON.parse(document.getElementById('lowdata').textContent)||[]; }catch(e){ LOWS=[]; }
+  ITEMS.concat(LOWS).forEach(function(it){ it.k = it.k || ''; it.cl = it.cl || ''; it.b = it.b || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl+' '+it.b); });
 
   var active=null, mat=null;
   var matsEl=document.getElementById('mats');
@@ -264,6 +290,11 @@ img{max-width:100%}
     ITEMS.forEach(function(it){
       if(otherVal!=null && it[other]!==otherVal) return;
       if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
+    });
+    // الريشيو/الخامة اللي موجودة في جدول الكميات القليلة بس: بتظهر برده (من غير ما تتحسب في العدد)
+    LOWS.forEach(function(it){
+      if(otherVal!=null && it[other]!==otherVal) return;
+      if(it[key] && !(it[key] in c)) c[it[key]]=0;
     });
     return c;
   }
@@ -276,8 +307,8 @@ img{max-width:100%}
     var cur=isMat?mat:active;
     b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',String(cur===value));
     // بار الريشيو من غير أعداد عشان الرقم مايتلخبطش مع العرض (B24)
-    b.innerHTML=label+(isMat && n!=null?' <span class="n">'+n+'</span>':'');
-    if(value!==null && !n && cur!==value) b.disabled=true;
+    b.innerHTML=label+(isMat && n?' <span class="n">'+n+'</span>':'');
+    if(value!==null && n==null && cur!==value) b.disabled=true;
     b.addEventListener('click',function(){
       if(isMat) mat=(mat===value)?null:value; else active=(active===value)?null:value;
       buildChips(); render();
@@ -288,20 +319,20 @@ img{max-width:100%}
     var rc=tally('r','k',mat), kc=tally('k','r',active);
     chipsEl.textContent='';
     chipsEl.appendChild(chip('الكل',null,mat==null?ITEMS.length:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
-    ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,rc[r]||0,false)); });
+    ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,rc[r],false)); });
     matsEl.textContent='';
     if(!mats.length){ matsEl.hidden=true; return; }
     matsEl.hidden=false;
     matsEl.appendChild(chip('كل الخامات',null,active==null?ITEMS.length:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
-    mats.forEach(function(k){ matsEl.appendChild(chip(k,k,kc[k]||0,true)); });
+    mats.forEach(function(k){ matsEl.appendChild(chip(k,k,kc[k],true)); });
   }
 
   var shown=[];
   var onlyNew=false, NEWN=ITEMS.filter(function(it){ return it.n; }).length;
   var onlyPend=false, PENDN=ITEMS.filter(function(it){ return it.s==='pending'; }).length;
-  function filtered(){
+  function filtered(list){
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
-    return ITEMS.filter(function(it){
+    return (list||ITEMS).filter(function(it){
       if(active && it.r!==active) return false;
       if(mat && it.k!==mat) return false;
       if(onlyPend && !isPending(it)) return false;
@@ -326,6 +357,7 @@ img{max-width:100%}
   }
   function isPending(it){ return it.s==='pending'; }
   var PH='<div class="ph"><img src="logo.png" alt=""><span>جاري التصوير</span></div>';
+  function isLowS(it){ return it.s==='low'; }
 
   var LOW = 50;   // أقل من كده = كمية قليلة
   function isLow(it){ return it.q!=null && it.q < LOW; }
@@ -342,7 +374,7 @@ img{max-width:100%}
       '<span class="meta"><span class="code">'+it.c+'</span>'+
       '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+it.m+(it.cl?' · <b class="clr">'+it.cl+'</b>':'')+'</span></span>';
-    b.addEventListener('click',function(){ open(shown.indexOf(it)); });
+    b.addEventListener('click',function(){ cur=shown; open(shown.indexOf(it)); });
     return b;
   }
 
@@ -363,10 +395,39 @@ img{max-width:100%}
     if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; render(); });
     var pb=countEl.querySelector('.pendbtn.pend');
     if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; render(); });
+    renderLow();
   }
 
+  /* ---------- جدول المتاح بكميات قليلة (أقل من 20 درزن، من غير صور) ---------- */
+  var lowSec=document.getElementById('lowsec'), lowBody=document.getElementById('lowbody'),
+      lowTgl=document.getElementById('lowtgl'), lowOpen=null, lowShown=[];
+  lowTgl.addEventListener('click',function(){ lowOpen=!lowIsOpen(); renderLow(); });
+  function lowIsOpen(){ return lowOpen!=null ? lowOpen : !!(active||mat||q.value.trim()); }
+  function renderLow(){
+    // "منتج جديد" و"جاري التصوير" فلاتر للكروت بس
+    if(!LOWS.length || onlyNew || onlyPend){ lowSec.hidden=true; return; }
+    lowShown=filtered(LOWS).sort(function(a,b){ return a.r.localeCompare(b.r) || b.q-a.q || a.c.localeCompare(b.c); });
+    lowSec.hidden = lowShown.length===0;
+    if(!lowShown.length) return;
+    document.getElementById('lown').innerHTML='<span class="badge" style="font-size:12px">'+lowShown.length+'</span>';
+    var isOpen=lowIsOpen();
+    lowTgl.textContent = isOpen ? 'إخفاء' : 'اعرض الأصناف';
+    if(!isOpen){ lowBody.textContent=''; return; }
+    var h='<table class="lowtbl"><thead><tr><th>الكود</th><th>الريشيو</th><th>التفاصيل</th><th style="text-align:center">الكمية</th></tr></thead><tbody>';
+    lowShown.forEach(function(it,i){
+      h+='<tr class="r" data-i="'+i+'"><td class="c">'+it.c+'</td><td><span class="badge">'+it.r+'</span></td>'+
+        '<td class="d">'+it.m+(it.k?' · '+it.k:'')+(it.cl?' · <b>'+it.cl+'</b>':'')+'</td>'+
+        '<td class="qn">'+it.q+(cart[it.c]?'<span class="inc">في السلة '+cart[it.c]+'</span>':'')+'</td></tr>';
+    });
+    lowBody.innerHTML=h+'</tbody></table>';
+  }
+  lowBody.addEventListener('click',function(e){
+    var tr=e.target.closest?e.target.closest('tr.r'):null; if(!tr) return;
+    cur=lowShown; open(+tr.getAttribute('data-i'));
+  });
+
   /* ---------- نافذة الصنف ---------- */
-  var lb=null, idx=-1, lastFocus=null;
+  var lb=null, idx=-1, lastFocus=null, cur=[];
 
   function open(i){
     if(i<0) return;
@@ -383,19 +444,20 @@ img{max-width:100%}
     document.body.style.overflow='';
     if(lastFocus && lastFocus.focus) lastFocus.focus();
   }
-  function step(n){ var j=idx+n; if(j<0||j>=shown.length) return; idx=j; fill(); }
+  function step(n){ var j=idx+n; if(j<0||j>=cur.length) return; idx=j; fill(); }
   var gi=0;
   function showPic(){
-    var it=shown[idx]; if(!it) return;
+    var it=cur[idx]; if(!it) return;
     var a=pics(it), im=lb.querySelector('.lb-img > img'), ph=lb.querySelector('.lb-img .ph');
     im.hidden=!a.length; ph.hidden=!!a.length;
+    ph.querySelector('span').textContent = isLowS(it) ? 'كمية قليلة — بدون صورة' : 'جاري التصوير';
     if(a.length){ im.src=a[gi]; im.alt='صنف كود '+it.c+' — صورة '+(gi+1); }
     var multi=a.length>1;
     lb.querySelector('.gnav.prev').hidden = !multi || gi<=0;
     lb.querySelector('.gnav.next').hidden = !multi || gi>=a.length-1;
     var c=lb.querySelector('.gcount'); c.hidden=!multi; c.textContent=(gi+1)+' / '+a.length;
   }
-  function gstep(n){ var a=pics(shown[idx]); var j=gi+n; if(j<0||j>=a.length) return; gi=j; showPic(); }
+  function gstep(n){ var a=pics(cur[idx]); var j=gi+n; if(j<0||j>=a.length) return; gi=j; showPic(); }
 
   function buildLb(){
     lb=document.createElement('div'); lb.className='lb'; lb.hidden=true;
@@ -462,7 +524,7 @@ img{max-width:100%}
     });
   }
   function shareWa(btn){
-    var it=shown[idx]; if(!it) return;
+    var it=cur[idx]; if(!it) return;
     var text=waText(it), src=pics(it)[gi];
     if(!src){ window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); return; }
     var fallback=function(){
@@ -480,7 +542,7 @@ img{max-width:100%}
   }
 
   function copy(btn){
-    var it=shown[idx]; if(!it) return;
+    var it=cur[idx]; if(!it) return;
     var done=function(){ btn.textContent='تم النسخ ✓'; setTimeout(function(){btn.textContent='نسخ الكود';},1400); };
     try{
       if(navigator.clipboard && navigator.clipboard.writeText)
@@ -494,7 +556,7 @@ img{max-width:100%}
   }
 
   function fill(){
-    var it=shown[idx]; if(!it) return;
+    var it=cur[idx]; if(!it) return;
     gi=0; showPic();
     lb.querySelector('.lb-code').textContent=it.c;
     lb.querySelector('.lb-title .newtag').hidden=!it.n;
@@ -520,7 +582,7 @@ img{max-width:100%}
     lb.querySelector('[data-a="add"]').textContent = inC ? 'تحديث السلة' : 'أضف للسلة';
     var note=lb.querySelector('.addrow-note'); note.hidden=!inC; note.textContent = inC ? ('في السلة: '+inC) : '';
     lb.querySelector('[data-a="prev"]').disabled = idx<=0;
-    lb.querySelector('[data-a="next"]').disabled = idx>=shown.length-1;
+    lb.querySelector('[data-a="next"]').disabled = idx>=cur.length-1;
   }
 
   document.addEventListener('keydown',function(e){
@@ -536,14 +598,14 @@ img{max-width:100%}
   clearBtn.addEventListener('click',function(){ q.value=''; q.focus(); render(); });
 
   /* ================= سلة المندوب ================= */
-  var BYCODE={}; ITEMS.forEach(function(it){ if(!BYCODE[it.c]) BYCODE[it.c]=it; });
+  var BYCODE={}; ITEMS.concat(LOWS).forEach(function(it){ if(!BYCODE[it.c]) BYCODE[it.c]=it; });
   var KEY='ikaf-cart-v1', NAMEKEY='ikaf-rep-name';
   var cart={};
   function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   try{ cart=JSON.parse(load(KEY)||'{}')||{}; }catch(e){ cart={}; }
   Object.keys(cart).forEach(function(c){ if(!BYCODE[c] || !(cart[c]>0)) delete cart[c]; });
-  function persist(){ save(KEY, JSON.stringify(cart)); updateFab(); }
+  function persist(){ save(KEY, JSON.stringify(cart)); updateFab(); if(typeof renderLow==='function') renderLow(); }
 
   function toast(msg){
     var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
@@ -552,7 +614,7 @@ img{max-width:100%}
   function num(v){ v=String(v||'').replace(/[٠-٩۰-۹]/g,function(d){return AR[d];}).replace(',', '.'); var n=parseFloat(v); return isFinite(n)&&n>0 ? Math.round(n*100)/100 : 0; }
 
   function addFromLb(){
-    var it=shown[idx]; if(!it) return;
+    var it=cur[idx]; if(!it) return;
     var n=num(lb.querySelector('#addq').value);
     if(!n){ if(cart[it.c]){ delete cart[it.c]; persist(); fill(); toast('اتشال من السلة'); } else toast('اكتب الكمية الأول'); return; }
     var was=!!cart[it.c]; cart[it.c]=n; persist(); fill();
@@ -606,7 +668,7 @@ img{max-width:100%}
     codes.forEach(function(c){
       var it=BYCODE[c], over = it.q!=null && cart[c]>it.q;
       var row=document.createElement('div'); row.className='ci';
-      row.innerHTML=(isPending(it)?'<img alt="" src="logo.png" style="object-fit:contain;background:#1A2150;padding:6px">':'<img alt="" src="'+thumbSrc(it)+'">')+
+      row.innerHTML=((isPending(it)||isLowS(it))?'<img alt="" src="logo.png" style="object-fit:contain;background:#1A2150;padding:6px">':'<img alt="" src="'+thumbSrc(it)+'">')+
         '<div><div class="c">'+c+'</div><div class="d">'+it.r+' · '+it.m+(it.k?' · '+it.k:'')+(it.cl?' · '+it.cl:'')+(it.b?' · '+it.b:'')+'</div>'+
         '<div class="d'+(over?' warn':'')+'">المتاح '+(it.q==null?'—':it.q)+(over?' — المطلوب أكتر من المتاح':'')+'</div></div>'+
         '<div class="ctl"><input type="text" inputmode="decimal" autocomplete="off" data-code="'+c+'" value="'+cart[c]+'" aria-label="الكمية">'+

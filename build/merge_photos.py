@@ -34,6 +34,7 @@ from build import ROOT, load_tree, ratio_label, width_label, log  # noqa: E402
 
 NEW_STOCK = False            # --new-stock: تقرير مخزون جديد -> تاريخ التحديث = النهارده
 MIN_QTY = 20                 # الصنف الجديد بيظهر لو رصيده 20 أو أكتر
+LOW_MIN = 1                  # جدول "متاح بكميات قليلة": من 1 درزن لحد أقل من MIN_QTY
 FULL_W, FULL_Q = 700, 72
 THUMB_W, THUMB_Q = 330, 72
 STOCK_SHEET = "المخزون"
@@ -485,6 +486,29 @@ def main():
                       "u": code[:11], "s": "pending"})
         pending.append(code)
 
+    # جلابية رصيدها أقل من 20 درزن (من 1 درزن لحد 19): بتظهر جدول تحت الكروت من غير صور
+    # "متاح بكميات قليلة" — للبيع بس، مش كارت
+    lowlist = []
+    shown_codes = {it["c"] for it in items if not it.get("_drop")}
+    for code in sorted(c for c, k in CAT.items() if k in PENDING_CATS):
+        q = stock.get(code, 0)
+        if code in shown_codes or code in excluded or not (LOW_MIN <= q < MIN_QTY):
+            continue
+        if not re.fullmatch(r"1\d{13}", code):
+            continue
+        rl, rn = ratio_label(code[8:10], ratios)
+        wl, mn = width_label(code[4:6], models)
+        if rl is None or mn is None:
+            continue
+        lowlist.append({"c": code, "r": rl + (wl or ""), "rn": rn, "q": fmt_qty(q),
+                        "w": wh_split(code, q), "m": mn, "s": "low"})
+    for it in lowlist:
+        it["k"] = materials.get(it["c"][1:3], "")
+        it["cl"] = colors.get(it["c"][10], "")
+        it["b"] = brands.get(it["c"][3], "")
+        if not it["w"]:
+            it.pop("w")
+
     # الخامة لكل صنف (خانة 2-3) — للفلتر في الصفحة
     nomat = sorted({it["c"][1:3] for it in items if it["c"][1:3] not in materials})
     for it in items:
@@ -519,6 +543,7 @@ def main():
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
+    tpl = tpl.replace("__LOWDATA__", json.dumps(lowlist, ensure_ascii=False))
     # التاريخ والوقت في مربعين منفصلين (من غير الشرطة اللي في النص)
     upd = stock_date(NEW_STOCK)
     tpl = tpl.replace("__UPDATED__", "".join(f'<span class="dt">{x.strip()}</span>' for x in upd.split("|") if x.strip()))
@@ -543,6 +568,7 @@ def main():
         log(f"جلابية من غير صورة اتسابت عشان الكود مش 14 رقم: {pend_skip}")
     if dropped:
         log(f"صور مكررة اتشالت (نفس الصورة أو نفس المجموعة اللونية): {len(dropped)}")
+    log(f"متاح بكميات قليلة (جدول من غير صور، {LOW_MIN} لحد أقل من {MIN_QTY} درزن): {len(lowlist)}")
     log(f"الإجمالي: {len(items)} صنف")
 
 
