@@ -98,6 +98,11 @@ def _norm(h):
     return " ".join(str(h).split()) if h is not None else ""
 
 
+def _wh(h):
+    """اسم المخزن من غير رقمه ومن غير القوس الأخير: '1 - الانتاج التام(الرياض)' -> 'الانتاج التام(الرياض'."""
+    return re.sub(r"^\d+\s*-\s*", "", _norm(h)).rstrip(")").strip()
+
+
 def load_stock(xlsx):
     """تقرير المخزون: شيت "المخزون" (أو أول شيت فيه عمود كود الصنف).
     الكمية = عمود "المستودعات الرئيسية"، ولو مش موجود = مجموع المخازن الرئيسية التلاتة.
@@ -115,7 +120,9 @@ def load_stock(xlsx):
             ci = head.index("كود الصنف")
             qcol = next((c for c in STOCK_COLS if c in head), None)
             qi = head.index(qcol) if qcol else None
-            wcols = [(head.index(n), lbl) for n, (_, lbl) in zip(wnames, WAREHOUSES) if n in head]
+            # أسماء المخازن ممكن تيجي برقم المخزن قبلها: "1 - الانتاج التام(الرياض)" / "32 - مستودع مكة المكرمة"
+            bare = [_wh(h) for h in head]
+            wcols = [(bare.index(_wh(n)), lbl) for n, (_, lbl) in zip(wnames, WAREHOUSES) if _wh(n) in bare]
             if qi is None and not wcols:
                 continue
             log(f"تقرير المخزون: شيت '{name}'، الكمية من "

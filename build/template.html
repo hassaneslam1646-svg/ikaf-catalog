@@ -210,11 +210,13 @@ img{max-width:100%}
 .lowtbl .c{font-family:var(--num);font-weight:600;font-size:12.5px;direction:ltr;text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
 .lowtbl .d{color:var(--muted);font-size:12px;line-height:1.35}
 .lowtbl .d b{color:var(--ink);font-weight:700}
-.lowtbl .qn{width:44px;font-family:var(--num);font-weight:700;text-align:center;white-space:nowrap}
+.lowtbl .qn{width:64px;font-family:var(--num);font-weight:700;text-align:center;white-space:nowrap}
 .lowtbl .badge{display:inline-block}
+.lowtbl .whs{display:block;font-family:var(--ar);font-weight:500;font-size:11px;color:var(--muted);line-height:1.5;margin-top:2px;white-space:nowrap}
+.lowtbl .whs b{font-family:var(--num);color:var(--ink)}
 .lowtbl .inc{color:#1E8E4E;font-size:11px;font-weight:700;display:block}
 .lowsec.only{margin-top:0}
-@media (max-width:390px){.lowtbl td,.lowtbl th{padding:7px 4px}.lowtbl .c{font-size:11.5px}.lowtbl .qn{width:34px}}
+@media (max-width:390px){.lowtbl td,.lowtbl th{padding:7px 3px}.lowtbl .c{font-size:11px}.lowtbl .qn{width:52px}.lowtbl .whs{font-size:10.5px}}
 .lowbtn[aria-pressed="true"]{background:#D7263D;border-color:#D7263D;color:#fff}
 .lowempty{padding:16px;color:var(--muted);text-align:center;font-size:13px}
 @media (max-width:640px){
@@ -429,7 +431,8 @@ img{max-width:100%}
     lowShown.forEach(function(it,i){
       h+='<tr class="r" data-i="'+i+'"><td class="c">'+it.c+'</td><td><span class="badge">'+it.r+'</span></td>'+
         '<td class="d">'+it.m+(it.k?' · '+it.k:'')+(it.cl?' · <b>'+it.cl+'</b>':'')+'</td>'+
-        '<td class="qn">'+it.q+(cart[it.c]?'<span class="inc">في السلة '+cart[it.c]+'</span>':'')+'</td></tr>';
+        '<td class="qn">'+it.q+(it.w?'<span class="whs">'+Object.keys(it.w).map(function(k){ return k+' <b>'+it.w[k]+'</b>'; }).join('<br>')+'</span>':'')+
+        (cart[it.c]?'<span class="inc">في السلة '+cart[it.c]+'</span>':'')+'</td></tr>';
     });
     lowBody.innerHTML=h+'</tbody></table>';
   }
