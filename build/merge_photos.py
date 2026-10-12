@@ -235,6 +235,38 @@ def fmt_qty(q):
     return int(math.floor(float(q) + 1e-9))
 
 
+def auto_en_model(m):
+    """ترجمة تقريبية لموديل جديد مش موجود في build/translations_en.json (بتظهر في السجل عشان تتراجع)."""
+    t = m
+    for a, b in [("(slim fit-22:24)", "(Chest 22-24)"), ("مخصر", "Slim"), ("اماراتى", "Emirati"), ("اماراتي", "Emirati"),
+                 ("عماني", "Omani"), ("كويتى", "Kuwaiti"), ("كويتي", "Kuwaiti"), ("مغربى", "Moroccan"), ("مغربي", "Moroccan"),
+                 ("مودرن", "Modern"), ("نصف كم", "Short Sleeve"), ("نص كم", "Short Sleeve"), ("3/4 كم", "3/4 Sleeve"),
+                 ("كم طويل", "Long Sleeve"), ("كم", "Sleeve"), ("مطرز", "Embroidered"), ("عادى", "Regular"), ("عادي", "Regular"),
+                 ("مع قبع", "with Hoodie"), ("قيطان", "Cord"), ("شريط", "Tape"), ("شيتوي", "Winter"), ("عرض", "Chest")]:
+        t = t.replace(a, b)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def load_i18n(items):
+    """قاموس الصفحة الإنجليزي من build/translations_en.json + ترجمة تلقائية لأي موديل جديد."""
+    f = os.path.join(ROOT, "build", "translations_en.json")
+    d = json.load(open(f, encoding="utf-8")) if os.path.exists(f) else {}
+    out = {"k": dict(d.get("materials", {})), "m": dict(d.get("models", {})), "cl": dict(d.get("colors", {})),
+           "b": dict(d.get("brands", {})), "w": dict(d.get("warehouses", {}))}
+    miss = {}
+    for it in items:
+        for key in ("k", "m", "cl", "b"):
+            v = it.get(key)
+            if v and v not in out[key]:
+                if key == "m":
+                    out["m"][v] = auto_en_model(v)
+                miss.setdefault(key, set()).add(v)
+    names = {"k": "خامات", "m": "موديلات (اتترجمت تلقائي)", "cl": "ألوان", "b": "ماركات"}
+    for key, vals in miss.items():
+        log(f"!! ترجمة إنجليزي ناقصة - {names[key]}: {sorted(vals)}")
+    return out
+
+
 def load_excluded():
     """أكواد المستخدم طلب تتشال من الكتالوج: build/excluded.json  {"الكود": "السبب"}."""
     p = os.path.join(ROOT, "build", "excluded.json")
@@ -555,6 +587,7 @@ def main():
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
     tpl = tpl.replace("__LOWDATA__", json.dumps(lowlist, ensure_ascii=False))
+    tpl = tpl.replace("__I18N__", json.dumps(load_i18n(items + lowlist), ensure_ascii=False))
     # التاريخ والوقت في مربعين منفصلين (من غير الشرطة اللي في النص)
     upd = stock_date(NEW_STOCK)
     tpl = tpl.replace("__UPDATED__", "".join(f'<span class="dt">{x.strip()}</span>' for x in upd.split("|") if x.strip()))
