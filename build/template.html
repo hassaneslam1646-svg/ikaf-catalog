@@ -813,11 +813,25 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   }
 
   /* ---------- عدّاد الزيارات (GoatCounter) - مش ظاهر للزوار ---------- */
-  function gc(name, n){
-    n=n||0;
-    try{ if(window.goatcounter && window.goatcounter.count){ window.goatcounter.count({path:name, title:name, event:true}); return; } }catch(e){ return; }
-    if(n<20) setTimeout(function(){ gc(name, n+1); }, 500);
+  // جهاز صاحب اللينك مش بيتعد: افتح اللينك + #gc-off مرة واحدة على كل براوزر (و #gc-on يرجّعه)
+  function gcSkip(){ try{ return localStorage.getItem('skipgc')==='t'; }catch(e){ return false; } }
+  function gcSwitch(){
+    var h=location.hash, msg='';
+    try{
+      if(h==='#gc-off'){ localStorage.setItem('skipgc','t'); msg='✓ العدّ اتقفل على البراوزر ده — زياراتك مش هتتحسب'; }
+      else if(h==='#gc-on'){ localStorage.removeItem('skipgc'); msg='العدّ اشتغل تاني على البراوزر ده'; }
+    }catch(e){ msg='البراوزر ده مش بيسمح بحفظ الإعداد (ممكن يكون وضع التصفح الخفي)'; }
+    if(msg){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} alert(msg); }
   }
+  function gc(name, n, view){
+    n=n||0;
+    if(gcSkip()) return;
+    try{ if(window.goatcounter && window.goatcounter.count){
+      window.goatcounter.count(view ? {path:location.pathname} : {path:name, title:name, event:true}); return; } }catch(e){ return; }
+    if(n<20) setTimeout(function(){ gc(name, n+1, view); }, 500);
+  }
+  gcSwitch();
+  window.addEventListener('hashchange', gcSwitch);
 
   /* ---------- تبديل اللغة ---------- */
   var langBtn=document.getElementById('lang');
@@ -851,9 +865,10 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   applyStatic();
   updateFab();
   buildChips(); render();
+  gc('', 0, true);
   gc('open-'+LANG);
 })();
 </script>
-<script data-goatcounter="https://eslam.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://eslam.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
