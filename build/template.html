@@ -786,6 +786,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function shareCart(btn){
     var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
     if(!rep){ toast(t('enterName')); cartEl.querySelector('.rep').focus(); return; }
+    gc('order-whatsapp-file');
     var text=summary(rep)+(notes?'\n'+t('oNotes')+': '+notes:'');
     // الملخص بيتنسخ عشان المندوب يلزقه مع الملف لو حب (إرسال ملف + نص مع بعض بيفشل على واتساب الآيفون)
     try{ navigator.clipboard && navigator.clipboard.writeText(text); }catch(e){}
@@ -804,10 +805,18 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
     if(!rep){ toast(t('enterName')); cartEl.querySelector('.rep').focus(); return; }
     var text=summary(rep)+(notes?'\n'+t('oNotes')+': '+notes:'');
+    gc('order-whatsapp-text');
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   }
   function afterShare(){
     if(confirm(t('sentQ'))){ cart={}; persist(); drawCart(); closeCart(); }
+  }
+
+  /* ---------- عدّاد الزيارات (GoatCounter) - مش ظاهر للزوار ---------- */
+  function gc(name, n){
+    n=n||0;
+    try{ if(window.goatcounter && window.goatcounter.count){ window.goatcounter.count({path:name, title:name, event:true}); return; } }catch(e){ return; }
+    if(n<20) setTimeout(function(){ gc(name, n+1); }, 500);
   }
 
   /* ---------- تبديل اللغة ---------- */
@@ -832,6 +841,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   langBtn.addEventListener('click',function(){
     LANG = LANG==='en' ? 'ar' : 'en';
     try{ localStorage.setItem('ikaf-lang', LANG); }catch(e){}
+    gc('switch-to-'+LANG);
     // النوافذ بتتبني تاني باللغة الجديدة
     if(lb){ close(); lb.remove(); lb=null; }
     if(cartEl){ closeCart(); cartEl.remove(); cartEl=null; }
@@ -841,7 +851,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   applyStatic();
   updateFab();
   buildChips(); render();
+  gc('open-'+LANG);
 })();
 </script>
+<script data-goatcounter="https://eslam.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
