@@ -308,7 +308,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     preparing:['جاري التجهيز…','Preparing…'], removed:['اتشال من السلة','Removed from cart'], enterQty:['اكتب الكمية الأول','Enter the quantity first'],
     updated:['اتحدثت الكمية في السلة','Cart quantity updated'], added:['اتضاف للسلة','Added to cart'],
     cart:['السلة','Cart'], cartTitle:['سلة الطلب','Order cart'], rep:['اسم المندوب','Sales rep name'], notes:['ملاحظات للمشرف (اختياري)','Notes for supervisor (optional)'],
-    sendFile:['إرسال ملف الطلب واتساب','Send order file on WhatsApp'], sendText:['إرسال كرسالة بس','Send as message only'], clear:['تفريغ السلة','Clear cart'],
+    sendFile:['إرسال ملف الطلب واتساب','Send order file on WhatsApp'], tapAgain:['✓ الملف جاهز — اضغط هنا للإرسال','✓ File ready — tap here to send'], sendText:['إرسال كرسالة بس','Send as message only'], clear:['تفريغ السلة','Clear cart'],
     clearQ:['تفريغ السلة كلها؟','Clear the whole cart?'], totQ:[' — إجمالي الكمية ',' — total qty '],
     cartEmpty:['السلة فاضية. افتح أي صنف واكتب الكمية واضغط "أضف للسلة".','Your cart is empty. Open any item, enter the quantity and tap "Add to cart".'],
     avail:['المتاح ','Available '], over:[' — المطلوب أكتر من المتاح',' — more than available'], del:['حذف','Remove'],
@@ -739,10 +739,11 @@ html[dir="ltr"] .mark .dt{direction:ltr}
         '<button class="rm" type="button" data-c="rm" data-code="'+c+'">'+t('del')+'</button></div>';
       list.appendChild(row);
     });
+    pendingFile=null; cartEl.querySelector('[data-c="share"]').textContent=t('sendFile');
     cartEl.querySelector('[data-c="share"]').disabled = !codes.length;
     cartEl.querySelector('[data-c="text"]').disabled = !codes.length;
   }
-  function openCart(){ if(!cartEl) buildCart(); drawCart(); cartEl.hidden=false; document.body.style.overflow='hidden'; }
+  function openCart(){ if(!cartEl) buildCart(); loadXlsx().catch(function(){}); drawCart(); cartEl.hidden=false; document.body.style.overflow='hidden'; }
   function closeCart(){ if(!cartEl) return; cartEl.hidden=true; if(!lb||lb.hidden) document.body.style.overflow=''; }
 
   function stamp(){ var d=new Date(); return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
@@ -755,7 +756,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     return new Promise(function(res,rej){ var sc=document.createElement('script'); sc.src='vendor/xlsx.mini.min.js';
       sc.onload=function(){ window.XLSX?res(window.XLSX):rej(); }; sc.onerror=rej; document.head.appendChild(sc); });
   }
-  function buildFile(rep, notes){
+  // الملف بيتبني على طول (من غير انتظار) عشان شاشة المشاركة تفتح في نفس الضغطة:
+  // سافاري على الآيفون بيرفض المشاركة لو حصل انتظار بعد الضغط ← ده كان سبب "حصلت مشكلة في تجهيز الملف"
+  function fileData(rep, notes){
     var R=rows(), when=stamp(), d=new Date();
     // اسم الملف إنجليزي بس: واتساب على الآيفون بيفشل يبعت ملف اسمه عربي
     var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
@@ -764,42 +767,64 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oAvail')]);
     R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.a]); });
     aoa.push(['',t('oTotal'),'','','','','',R.reduce(function(a,r){return a+r.q;},0),'']);
-    return loadXlsx().then(function(X){
-      var ws=X.utils.aoa_to_sheet(aoa);
+    return {R:R, aoa:aoa, base:base};
+  }
+  function makeFile(X, D){
+    if(X){ try{
+      var ws=X.utils.aoa_to_sheet(D.aoa);
       // الكود كنص عشان الأرقام الطويلة ماتتغيرش
-      R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:aoa.length-R.length-1+i, c:1}); ws[ref]={t:'s', v:r.c}; });
+      D.R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:D.aoa.length-D.R.length-1+i, c:1}); ws[ref]={t:'s', v:r.c}; });
       ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:16}];
       var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, t('oSheet'));
       var out=X.write(wb,{bookType:'xlsx',type:'array'});
-      return new File([out], base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    }).catch(function(){
-      // احتياطي: CSV بيفتح في الإكسيل
-      var csv='\ufeff'+aoa.map(function(r){ return r.map(function(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\r\n');
-      return new File([csv], base+'.csv', {type:'text/csv'});
-    });
+      return new File([out], D.base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    }catch(e){} }
+    // احتياطي: CSV بيفتح في الإكسيل
+    var csv='\ufeff'+D.aoa.map(function(r){ return r.map(function(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\r\n');
+    return new File([csv], D.base+'.csv', {type:'text/csv'});
   }
   function summary(rep){
     var R=rows(), lines=[t('sOrder')+(rep||t('sRep'))+' — '+stamp(), R.length+t('sItems')];
     R.forEach(function(r){ lines.push(r.c+' ('+r.r+') = '+r.q); });
     return lines.join('\n');
   }
+  var pendingFile=null;   // ملف جاهز لو المشاركة اترفضت أول مرة - الضغطة الجاية تبعته على طول
+  function resetShareBtn(){
+    pendingFile=null;
+    var b=cartEl && cartEl.querySelector('[data-c="share"]'); if(b){ b.textContent=t('sendFile'); b.disabled=!Object.keys(cart).length; }
+  }
+  function downloadAndWa(f, text){
+    var a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+    window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+t('fileDl')),'_blank');
+  }
   function shareCart(btn){
     var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
     if(!rep){ toast(t('enterName')); cartEl.querySelector('.rep').focus(); return; }
-    gc('order-whatsapp-file');
     var text=summary(rep)+(notes?'\n'+t('oNotes')+': '+notes:'');
+    if(!pendingFile && !window.XLSX){
+      // مكتبة الإكسيل لسه بتتحمّل (نادر): جهّز الملف واطلب ضغطة كمان
+      btn.textContent=t('prepFile'); btn.disabled=true;
+      loadXlsx().catch(function(){ return null; }).then(function(X){
+        pendingFile=makeFile(X, fileData(rep, notes)); btn.textContent=t('tapAgain'); btn.disabled=false; });
+      return;
+    }
+    var f=pendingFile || makeFile(window.XLSX, fileData(rep, notes));
+    // الكمبيوتر: شاشة مشاركة ويندوز/ماك مش بتقبل ملف إكسيل لواتساب ← ننزّل الملف ونفتح واتساب على طول
+    var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints>1 && /Mac/.test(navigator.platform||''));
+    var canFiles=false; if(mobile){ try{ canFiles=!!(navigator.share && navigator.canShare && navigator.canShare({files:[f]})); }catch(e){} }
+    if(!canFiles){ gc('order-whatsapp-file'); resetShareBtn(); downloadAndWa(f, text); return; }
     // الملخص بيتنسخ عشان المندوب يلزقه مع الملف لو حب (إرسال ملف + نص مع بعض بيفشل على واتساب الآيفون)
-    try{ navigator.clipboard && navigator.clipboard.writeText(text); }catch(e){}
-    var old=btn.textContent; btn.textContent=t('prepFile'); btn.disabled=true;
-    buildFile(rep, notes).then(function(f){
-      if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
-        return navigator.share({files:[f]}).then(function(){ afterShare(); }, function(e){ if(e && e.name!=='AbortError') throw e; });
-      }
-      // الجهاز مش بيدعم مشاركة الملفات: نزّل الملف وافتح واتساب بالملخص
-      var a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
-      window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+t('fileDl')),'_blank');
-    }).catch(function(){ toast(t('fileFail')); })
-      .then(function(){ btn.textContent=old; btn.disabled=false; });
+    try{ navigator.clipboard && navigator.clipboard.writeText(text).catch(function(){}); }catch(e){}
+    var p; try{ p=navigator.share({files:[f]}); }catch(e){ p=Promise.reject(e); }
+    p.then(function(){ gc('order-whatsapp-file'); resetShareBtn(); afterShare(); }, function(e){
+      var n=(e && e.name) || 'Error';
+      if(n==='AbortError'){ resetShareBtn(); return; }            // المندوب قفل شاشة المشاركة بنفسه
+      gc('order-file-retry-'+n);
+      // تاني مرة تفشل: ننزّل الملف ونفتح واتساب بدل ما المندوب يفضل يضغط
+      if(pendingFile){ gc('order-whatsapp-file'); resetShareBtn(); downloadAndWa(f, text); return; }
+      // الملف جاهز: الضغطة الجاية بتفتح المشاركة على طول من غير أي تجهيز
+      pendingFile=f; btn.textContent=t('tapAgain'); btn.disabled=false;
+    });
   }
   function shareText(){
     var rep=cartEl.querySelector('.rep').value.trim(), notes=cartEl.querySelector('.notes').value.trim();
