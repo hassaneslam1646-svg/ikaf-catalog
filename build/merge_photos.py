@@ -370,6 +370,15 @@ def main():
                 WH[c] = {k: v / 12 for k, v in WH.get(c, {}).items()}
     overrides = load_overrides()
     for c, q in overrides.items():
+        if isinstance(q, dict):
+            # {"الرياض": 79} = صنف مش في التقرير: بيتضاف بالتفصيلة دي لحد ما يظهر في تقرير مخزون
+            if c in stock:
+                log(f"كمية يدوية اتسابت لأن الصنف رجع في التقرير: {c} (التقرير: {stock[c]}) - امسحه من overrides.json")
+                continue
+            WH[c] = {k: float(v) for k, v in q.items()}
+            stock[c] = sum(WH[c].values())
+            log(f"صنف مضاف يدويًا: {c} = {stock[c]:g} {q}")
+            continue
         log(f"كمية متعدّلة يدويًا: {c} = {q} (التقرير: {stock.get(c)})")
         stock[c] = q
     log(f"تقرير المخزون: {len(stock)} كود")
