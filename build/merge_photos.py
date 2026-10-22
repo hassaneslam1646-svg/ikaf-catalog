@@ -588,6 +588,18 @@ def main():
             it["n"] = 1
         else:
             it.pop("n", None)
+    # علامة "مخفض": build/discount_codes.txt (كود في كل سطر) - للكروت ولجدول أقل من 20 درزن
+    dpf = os.path.join(ROOT, "build", "discount_codes.txt")
+    disc = set(re.findall(r"^\s*0*(\d{8,})", open(dpf, encoding="utf-8").read(), re.M)) if os.path.exists(dpf) else set()
+    for it in items + lowlist:
+        if it["c"] in disc:
+            it["d"] = 1
+        else:
+            it.pop("d", None)
+    shown_d = {it["c"] for it in items + lowlist if it.get("d")}
+    if disc:
+        log(f"مخفض: {len(shown_d)} صنف ظاهر من {len(disc)} كود في القائمة "
+            f"(الباقي رصيده أقل من درزن أو الكود مش 14 رقم أو مش في المخزون)")
     miss_new = sorted(newp - {it["c"] for it in items})
     log(f"منتج جديد: {sum(1 for it in items if it.get('n'))} صنف"
         + (f" — مش ظاهرين في الكتالوج: {miss_new}" if miss_new else ""))

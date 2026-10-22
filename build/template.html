@@ -230,7 +230,21 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   .lb-img img{max-height:46vh}
   .lb-side{padding:16px}
 }
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+/* ---------- مخفض ---------- */
+.tags{position:absolute;top:8px;inset-inline-start:8px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:1}
+.tags .low{position:static}
+.discb{display:inline-flex;align-items:center;gap:4px;color:#fff;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;
+  background:linear-gradient(100deg,#B5179E 0%,#E5383B 45%,#FFB4A2 50%,#E5383B 55%,#B5179E 100%);background-size:250% 100%;
+  box-shadow:0 2px 10px rgba(181,23,158,.45);animation:discShine 2.6s linear infinite, discPulse 1.6s ease-in-out infinite}
+.discb::before{content:"%";font-family:var(--num);font-size:11px;background:rgba(255,255,255,.25);border-radius:999px;width:16px;height:16px;
+  display:inline-flex;align-items:center;justify-content:center}
+@keyframes discShine{0%{background-position:100% 0}100%{background-position:-150% 0}}
+@keyframes discPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.disctag{display:inline-block;background:#B5179E;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
+.lowtbl .disct{display:inline-block;margin-top:3px;background:#B5179E;color:#fff;font-family:var(--ar);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px}
+.discbtn{border-color:#B5179E!important;color:#B5179E;font-weight:700}
+.discbtn[aria-pressed="true"]{background:#B5179E;color:#fff}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}.discb{animation:none}}
 </style>
 </head>
 <body>
@@ -292,6 +306,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     ph:['اكتب الكود أو جزء منه…','Type the code or part of it…'],
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
+    disc:['مخفض','Discount'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
     u20n:[' صنف أقل من 20 درزن',' items under 20 dozen'],
     newB:['منتج جديد','New'], pendB:['جاري التصوير','Under photo process'], lowB:['أقل من 20 درزن','Under 20 dozen'],
@@ -346,13 +361,14 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       if(otherVal!=null && it[other]!==otherVal) return;
       if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
     });
-    // الريشيو/الخامة اللي موجودة في جدول الكميات القليلة بس: بتظهر برده (من غير ما تتحسب في العدد)
+    // أصناف جدول أقل من 20 درزن بتتحسب برده (كل الأصناف = الكروت + الجدول)
     LOWS.forEach(function(it){
       if(otherVal!=null && it[other]!==otherVal) return;
-      if(it[key] && !(it[key] in c)) c[it[key]]=0;
+      if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
     });
     return c;
   }
+  var ALLN = ITEMS.length + LOWS.length;   // كل الأصناف = الكروت + جدول أقل من 20 درزن
   var allR=tally('r'), allK=tally('k');
   var ratios=Object.keys(allR).sort(function(a,b){ return allR[b]-allR[a] || a.localeCompare(b); });
   var mats=Object.keys(allK).sort(function(a,b){ return allK[b]-allK[a] || a.localeCompare(b,'ar'); });
@@ -373,18 +389,19 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function buildChips(){
     var rc=tally('r','k',mat), kc=tally('k','r',active);
     chipsEl.textContent='';
-    chipsEl.appendChild(chip(t('all'),null,mat==null?ITEMS.length:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
+    chipsEl.appendChild(chip(t('all'),null,mat==null?ALLN:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
     ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,rc[r],false)); });
     matsEl.textContent='';
     if(!mats.length){ matsEl.hidden=true; return; }
     matsEl.hidden=false;
-    matsEl.appendChild(chip(t('allMat'),null,active==null?ITEMS.length:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
+    matsEl.appendChild(chip(t('allMat'),null,active==null?ALLN:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
     mats.forEach(function(k){ matsEl.appendChild(chip(k,k,kc[k],true)); });
   }
 
   var shown=[];
   var onlyNew=false, NEWN=ITEMS.filter(function(it){ return it.n; }).length;
   var onlyPend=false, PENDN=ITEMS.filter(function(it){ return it.s==='pending'; }).length;
+  var onlyDisc=false, DISCN=ITEMS.concat(LOWS).filter(function(it){ return it.d; }).length;
   var onlyLow=false;   // فلتر "أقل من 20 درزن": الجدول بس من غير الكروت
   function filtered(list){
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
@@ -393,6 +410,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       if(mat && it.k!==mat) return false;
       if(onlyPend && !isPending(it)) return false;
       if(onlyNew && !it.n) return false;
+      if(onlyDisc && !it.d) return false;
       if(!raw) return true;
       if(d && it.c.indexOf(d)!==-1) return true;
       if(t && it._t.indexOf(t)!==-1) return true;
@@ -424,7 +442,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">'+t('qty')+' <b>'+it.q+'</b></span>';
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+t('pics')+'</span>' : '';
-    b.innerHTML=(isLow(it)?'<span class="low">'+t('low')+'</span>':'')+
+    b.innerHTML=((isLow(it)||it.d)?'<span class="tags">'+(isLow(it)?'<span class="low">'+t('low')+'</span>':'')+(it.d?'<span class="discb">'+t('disc')+'</span>':'')+'</span>':'')+
       (it.n?'<span class="newb">'+t('newB')+'</span>':'')+
       (isPending(it) ? PHh() : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="'+t('codeAlt')+it.c+'">')+
       '<span class="meta"><span class="code">'+it.c+'</span>'+
@@ -442,20 +460,25 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     grid.appendChild(frag);
     empty.hidden = onlyLow || shown.length!==0;
     clearBtn.hidden = q.value==='';
-    countEl.innerHTML = (onlyLow ? '<b>'+filtered(LOWS).length+'</b>'+t('u20n')
-      : shown.length===ITEMS.length
-      ? t('allItems')+' — <b>'+ITEMS.length+'</b>'+(LANG==='en'?'':t('items'))
-      : '<b>'+shown.length+'</b>'+t('of')+ITEMS.length+t('items'))
+    // العدد = الكروت + أصناف جدول أقل من 20 درزن اللي مطابقة لنفس الفلتر
+    var lowMatch = (onlyNew||onlyPend) ? 0 : filtered(LOWS).length, nAll = onlyLow ? lowMatch : shown.length + lowMatch;
+    countEl.innerHTML = (onlyLow ? '<b>'+lowMatch+'</b>'+t('u20n')
+      : nAll===ALLN
+      ? t('allItems')+' — <b>'+ALLN+'</b>'+(LANG==='en'?'':t('items'))
+      : '<b>'+nAll+'</b>'+t('of')+ALLN+t('items'))
+      + (DISCN ? '<button type="button" class="pendbtn discbtn" aria-pressed="'+onlyDisc+'">'+t('disc')+' '+DISCN+'</button>' : '')
       + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">'+t('newB')+' '+NEWN+'</button>' : '')
       + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">'+t('pendB')+' '+PENDN+'</button>' : '')
       + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+'</button>' : '');
     // الفلاتر التلاتة واحد بس شغال في نفس الوقت
     var nb=countEl.querySelector('.newbtn');
-    if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=false; render(); });
+    if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=onlyDisc=false; render(); });
+    var db=countEl.querySelector('.discbtn');
+    if(db) db.addEventListener('click',function(){ onlyDisc=!onlyDisc; onlyNew=onlyPend=onlyLow=false; lowOpen=null; render(); });
     var pb=countEl.querySelector('.pendbtn.pend');
-    if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; onlyNew=onlyLow=false; render(); });
+    if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; onlyNew=onlyLow=onlyDisc=false; render(); });
     var lwb=countEl.querySelector('.lowbtn');
-    if(lwb) lwb.addEventListener('click',function(){ onlyLow=!onlyLow; onlyNew=onlyPend=false; lowOpen=null; render(); window.scrollTo(0,0); });
+    if(lwb) lwb.addEventListener('click',function(){ onlyLow=!onlyLow; onlyNew=onlyPend=onlyDisc=false; lowOpen=null; render(); window.scrollTo(0,0); });
     renderLow();
   }
 
@@ -463,7 +486,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   var lowSec=document.getElementById('lowsec'), lowBody=document.getElementById('lowbody'),
       lowTgl=document.getElementById('lowtgl'), lowOpen=null, lowShown=[];
   lowTgl.addEventListener('click',function(){ lowOpen=!lowIsOpen(); renderLow(); });
-  function lowIsOpen(){ return onlyLow || (lowOpen!=null ? lowOpen : !!(active||mat||q.value.trim())); }
+  function lowIsOpen(){ return onlyLow || (lowOpen==null && onlyDisc) || (lowOpen!=null ? lowOpen : !!(active||mat||q.value.trim())); }
   function renderLow(){
     // "منتج جديد" و"جاري التصوير" فلاتر للكروت بس
     if(!LOWS.length || onlyNew || onlyPend){ lowSec.hidden=true; return; }
@@ -479,7 +502,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     if(!isOpen){ lowBody.textContent=''; return; }
     var h='<table class="lowtbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('thRatio')+'</th><th>'+t('thDet')+'</th><th style="text-align:center">'+t('qty')+'</th></tr></thead><tbody>';
     lowShown.forEach(function(it,i){
-      h+='<tr class="r" data-i="'+i+'"><td class="c">'+it.c+'</td><td><span class="badge">'+it.r+'</span></td>'+
+      h+='<tr class="r" data-i="'+i+'"><td class="c">'+it.c+(it.d?'<br><span class="disct">'+t('disc')+'</span>':'')+'</td><td><span class="badge">'+it.r+'</span></td>'+
         '<td class="d">'+tv('m',it.m)+(it.k?' · '+tv('k',it.k):'')+(it.cl?' · <b>'+tv('cl',it.cl)+'</b>':'')+'</td>'+
         '<td class="qn">'+it.q+(cart[it.c]?'<span class="inc">'+t('inCart')+' '+cart[it.c]+'</span>':'')+'</td></tr>';
     });
@@ -530,7 +553,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       '<button class="gnav prev" type="button" data-a="gprev" aria-label="'+t('prev')+'">'+(LANG==='en'?'&#8249;':'&#8250;')+'</button>'+
       '<button class="gnav next" type="button" data-a="gnext" aria-label="'+t('next')+'">'+(LANG==='en'?'&#8250;':'&#8249;')+'</button>'+
       '<span class="gcount" dir="ltr"></span></div><div class="lb-side">'+
-      '<div class="lb-head"><div><p class="lb-title">'+t('itemCode')+'<span class="newtag" hidden>'+t('newB')+'</span></p><div class="lb-code"></div></div>'+
+      '<div class="lb-head"><div><p class="lb-title">'+t('itemCode')+'<span class="newtag" hidden>'+t('newB')+'</span><span class="disctag" hidden>'+t('disc')+'</span></p><div class="lb-code"></div></div>'+
       '<button class="x" type="button" data-a="close" aria-label="'+t('close')+'">×</button></div>'+
       '<dl class="kv">'+
       '<dt>'+t('ratio')+'</dt><dd><span class="bigbadge"></span></dd>'+
@@ -624,6 +647,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     gi=0; showPic();
     lb.querySelector('.lb-code').textContent=it.c;
     lb.querySelector('.lb-title .newtag').hidden=!it.n;
+    lb.querySelector('.lb-title .disctag').hidden=!it.d;
     lb.querySelector('.bigbadge').textContent=it.r;
     lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (isLow(it) ? '<span class="lowtag">'+t('low')+'</span>' : '');
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
@@ -749,7 +773,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function stamp(){ var d=new Date(); return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function rows(){
     return Object.keys(cart).map(function(c,i){ var it=BYCODE[c];
-      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q}; });
+      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q, d:it.d?t('disc'):''}; });
   }
   function loadXlsx(){
     if(window.XLSX) return Promise.resolve(window.XLSX);
@@ -764,9 +788,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     var aoa=[[t('oTitle')],[t('oRep'),rep||''],[t('oDate'),when]];
     if(notes) aoa.push([t('oNotes'),notes]);
-    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oAvail')]);
-    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.a]); });
-    aoa.push(['',t('oTotal'),'','','','','',R.reduce(function(a,r){return a+r.q;},0),'']);
+    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oAvail'),t('disc')]);
+    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.a, r.d]); });
+    aoa.push(['',t('oTotal'),'','','','','',R.reduce(function(a,r){return a+r.q;},0),'','']);
     return {R:R, aoa:aoa, base:base};
   }
   function makeFile(X, D){
@@ -774,7 +798,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       var ws=X.utils.aoa_to_sheet(D.aoa);
       // الكود كنص عشان الأرقام الطويلة ماتتغيرش
       D.R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:D.aoa.length-D.R.length-1+i, c:1}); ws[ref]={t:'s', v:r.c}; });
-      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:16}];
+      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:16},{wch:9}];
       var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, t('oSheet'));
       var out=X.write(wb,{bookType:'xlsx',type:'array'});
       return new File([out], D.base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -785,7 +809,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   }
   function summary(rep){
     var R=rows(), lines=[t('sOrder')+(rep||t('sRep'))+' — '+stamp(), R.length+t('sItems')];
-    R.forEach(function(r){ lines.push(r.c+' ('+r.r+') = '+r.q); });
+    R.forEach(function(r){ lines.push(r.c+' ('+r.r+') = '+r.q+(r.d?' — '+r.d:'')); });
     return lines.join('\n');
   }
   var pendingFile=null;   // ملف جاهز لو المشاركة اترفضت أول مرة - الضغطة الجاية تبعته على طول
@@ -869,7 +893,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     document.querySelectorAll('.mark .dt').forEach(function(e){
       if(!e.getAttribute('data-ar')) e.setAttribute('data-ar', e.textContent);
       var v=e.getAttribute('data-ar'); e.textContent = E ? v.replace(/\s*م$/,' PM').replace(/\s*ص$/,' AM') : v; });
-    document.getElementById('total').textContent = ITEMS.length + t('items');
+    document.getElementById('total').textContent = ALLN + t('items');
     q.placeholder=t('ph'); q.setAttribute('aria-label', t('ph'));
     empty.innerHTML='<b>'+t('emptyB')+'</b>'+t('emptyT');
     document.querySelector('.lowhead h2').firstChild.textContent=t('lowH')+' ';
