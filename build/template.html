@@ -241,6 +241,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .disctag{display:inline-block;background:#B5179E;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
 .lowtbl .disct{display:inline-block;margin-top:3px;background:#B5179E;color:#fff;font-family:var(--ar);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px}
 .discbtn{border-color:#B5179E!important;color:#B5179E;font-weight:700}
+.newbtn{border-color:#1E9E57!important;color:#1E9E57;font-weight:700}
+.lowbtn .note{font-size:11.5px;opacity:.75}
 .discbtn[aria-pressed="true"]{background:#B5179E;color:#fff}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}.discb{animation:none}}
 </style>
@@ -307,7 +309,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     disc:['مخفض','Discount'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
     u20n:[' صنف أقل من 20 درزن',' items under 20 dozen'],
-    newB:['منتج جديد','New'], pendB:['جاري التصوير','Under photo process'], lowB:['أقل من 20 درزن','Under 20 dozen'],
+    newB:['منتج جديد','New'], pendB:['جاري التصوير','Under photo process'], lowB:['أقل من 20 درزن','Under 20 dozen'], lowNote:['(للاطلاع بدون الصور)','(view only, no photos)'],
     low:['كمية قليلة','Low stock'], qty:['الكمية','Qty'], pics:[' صور',' photos'], codeAlt:['صنف كود ','Item '],
     lowH:['متاح بكميات قليلة','Low-stock items'],
     lowSub:['أصناف رصيدها أقل من 20 درزن — من غير صور، متاحة للبيع. اضغط على الصنف لتفاصيله أو لإضافته للسلة.','Items under 20 dozen — no photos, available for sale. Tap an item for details or to add it to the cart.'],
@@ -468,7 +470,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       + (DISCN ? '<button type="button" class="pendbtn discbtn" aria-pressed="'+onlyDisc+'">'+t('disc')+' '+DISCN+'</button>' : '')
       + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">'+t('newB')+' '+NEWN+'</button>' : '')
       + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">'+t('pendB')+' '+PENDN+'</button>' : '')
-      + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+'</button>' : '');
+      + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+' <span class="note">'+t('lowNote')+'</span></button>' : '');
     // الفلاتر التلاتة واحد بس شغال في نفس الوقت
     var nb=countEl.querySelector('.newbtn');
     if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=onlyDisc=false; render(); });
