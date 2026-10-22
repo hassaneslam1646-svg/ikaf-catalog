@@ -234,13 +234,10 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .tags{position:absolute;top:8px;inset-inline-start:8px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:1}
 .tags .low,.tags .newb{position:static}
 .tags.end{inset-inline-start:auto;inset-inline-end:8px;align-items:flex-end}
-.discb{display:inline-flex;align-items:center;gap:4px;color:#fff;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;
+.discb{display:inline-block;color:#fff;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;
   background:linear-gradient(100deg,#B5179E 0%,#E5383B 45%,#FFB4A2 50%,#E5383B 55%,#B5179E 100%);background-size:250% 100%;
-  box-shadow:0 2px 10px rgba(181,23,158,.45);animation:discShine 2.6s linear infinite, discPulse 1.6s ease-in-out infinite}
-.discb::before{content:"%";font-family:var(--num);font-size:11px;background:rgba(255,255,255,.25);border-radius:999px;width:16px;height:16px;
-  display:inline-flex;align-items:center;justify-content:center}
+  box-shadow:0 2px 8px rgba(0,0,0,.25);animation:discShine 2.6s linear infinite}
 @keyframes discShine{0%{background-position:100% 0}100%{background-position:-150% 0}}
-@keyframes discPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .disctag{display:inline-block;background:#B5179E;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
 .lowtbl .disct{display:inline-block;margin-top:3px;background:#B5179E;color:#fff;font-family:var(--ar);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px}
 .discbtn{border-color:#B5179E!important;color:#B5179E;font-weight:700}
