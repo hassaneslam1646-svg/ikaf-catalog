@@ -31,9 +31,16 @@ jobs:
         run: |
           shopt -s nullglob nocaseglob
           files=(stock/*.xlsx stock/*.xls *.xlsx *.xls)   # فولدر stock أو الصفحة الرئيسية للريبو
-          changed=""
+          # صور اترفعت في مكان غلط (build/ أو الصفحة الرئيسية أو stock/) بتتنقل لـ build/photos_src لوحدها
+          moved=""
+          for f in build/*.jpg build/*.jpeg build/*.png build/*.webp build/*.jfif *.jpg *.jpeg *.png *.webp *.jfif stock/*.jpg stock/*.jpeg stock/*.png stock/*.webp stock/*.jfif; do
+            case "$f" in logo.png) continue;; esac
+            git mv -f "$f" build/photos_src/ && moved="$moved $f"
+          done
+          if [ -n "$moved" ]; then echo "صور اتنقلت لـ build/photos_src:$moved"; fi
+          changed="$moved"
           if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
-            changed=$(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/pieces_codes.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html build/discount_codes.txt build/tree.xlsx build/translations_en.json)
+            changed="$(echo $moved $(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/pieces_codes.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html build/discount_codes.txt build/tree.xlsx build/translations_en.json))"
           fi
           if [ ${#files[@]} -eq 0 ] && [ -z "$changed" ]; then echo "مفيش تقرير مخزون ولا صور جديدة"; exit 0; fi
           pip install --quiet pillow numpy scipy openpyxl pypdf reportlab
