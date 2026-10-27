@@ -559,7 +559,6 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       '<dl class="kv">'+
       '<dt>'+t('ratio')+'</dt><dd><span class="bigbadge"></span></dd>'+
       '<dt>'+t('qty')+'</dt><dd><span class="bigqty v-q"></span><div class="wh v-w"></div></dd>'+
-      '<dt>'+t('ratioName')+'</dt><dd class="v-rn"></dd>'+
       '<dt>'+t('model')+'</dt><dd class="v-m"></dd>'+
       '<dt class="k-k">'+t('fabric')+'</dt><dd class="v-k"></dd>'+
       '<dt class="k-cl">'+t('color')+'</dt><dd class="v-cl"></dd>'+
@@ -656,7 +655,6 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       var sp=document.createElement('span'); sp.textContent=tv('w',k); var b=document.createElement('b'); b.textContent=it.w[k];
       sp.appendChild(b); wEl.appendChild(sp); }); }
     wEl.hidden=!it.w;
-    lb.querySelector('.v-rn').textContent=tv('rn',it.rn);
     lb.querySelector('.v-m').textContent=tv('m',it.m);
     lb.querySelector('.v-k').textContent=tv('k',it.k);
     lb.querySelector('.v-k').hidden = lb.querySelector('.k-k').hidden = !it.k;
