@@ -425,6 +425,8 @@ def main():
     # صور المستخدم أكد إنها مكررة (اسم الملف من غير امتداد): build/drop_photos.json
     dp = os.path.join(ROOT, "build", "drop_photos.json")
     drop_manual = set(json.load(open(dp, encoding="utf-8")).get("photos", [])) if os.path.exists(dp) else set()
+    # صفحات PDF متكررة لنفس الكود والمستخدم أكد إنها غلط: {"pages": [106]}
+    drop_pages = set(json.load(open(dp, encoding="utf-8")).get("pages", [])) if os.path.exists(dp) else set()
 
     # الكود اللي متكرر على أكتر من صفحة في الـPDF بيظهر كارت واحد بس:
     # الصفحة التانية بتتشال لو نفس المجموعة اللونية، أو بتبقى صورة إضافية لو مجموعة مختلفة
@@ -439,10 +441,18 @@ def main():
         mine = [keep["p"]] + keep.get("xp", [])
         sigs = [_sig(os.path.join(ROOT, "full", f"{pg:03d}.webp")) for pg in mine]
         if not any(_same_group(_sig(os.path.join(ROOT, "full", f"{it['p']:03d}.webp")), k) for k in sigs):
-            keep.setdefault("xp", []).append(it["p"])
+            if it["p"] in drop_pages:
+                dropped.append(f"page {it['p']}")
+            else:
+                keep.setdefault("xp", []).append(it["p"])
         merged.append((it["c"], it["p"]))
         it["_drop"] = True
     items = [it for it in items if not it.get("_drop")]
+    for it in items:                                   # صفحات إضافية اتشالت بطلب المستخدم
+        if it.get("xp"):
+            it["xp"] = [pg for pg in it["xp"] if pg not in drop_pages]
+            if not it["xp"]:
+                it.pop("xp")
     if merged:
         log(f"أكواد متكررة في الـPDF اتجمعت في كارت واحد: {merged}")
 
