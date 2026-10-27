@@ -413,7 +413,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       if(onlyDisc && !it.d) return false;
       if(!raw) return true;
       if(d && it.c.indexOf(d)!==-1) return true;
-      if(t && it._t.indexOf(t)!==-1) return true;
+      // "عادي" في البحث = موديل مش مطرز (الموديل اللي فيه "مطرز عرض عادى" يعني عرض عادي بس هو مطرز)
+      if(t && it._t.indexOf(t)!==-1){
+        var mm=norm(it.m||'');
+        if(/عادي|regular/.test(t) && !/مطرز|embroider/.test(t) && mm.indexOf('مطرز')!==-1) return false;
+        return true;
+      }
       return false;
     });
   }
