@@ -268,7 +268,10 @@ def load_i18n(items):
 
 
 THOBE_EXT = (".jpg", ".jpeg", ".png", ".webp", ".jfif")
-THOBE_MAT = {"02": "بولستر عادي"}   # في الثوب بس: خامة 02 (أكواد 102...) اسمها بولستر عادي
+THOBE_MAT = {"02": "بولستر عادي"}
+# وصف الثوب الرسمي حسب رقم الموديل (بدل "ثوب سعودى ساده" اللي في الشجرة)
+THOBE_FORMAL_DESC = {"001": "ثوب سعودي رسمي - ياقة سادة كم سادة",
+                     "002": "ثوب سعودي رسمي - ياقة قلاب كم سادة"}   # في الثوب بس: خامة 02 (أكواد 102...) اسمها بولستر عادي
 
 
 def build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, photos, excluded, drop_manual):
@@ -369,6 +372,8 @@ def build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, ph
               "rn": ""}
         # رسمي = ساده، مودرن = مطعم / مطرز
         it["tk"] = "m" if re.search("مطرز|مطعم", mn or "") else "r"
+        if it["tk"] == "r" and key[2] in THOBE_FORMAL_DESC:
+            it["m"] = THOBE_FORMAL_DESC[key[2]]
         if wsum:
             it["w"] = wsum
         if names:
