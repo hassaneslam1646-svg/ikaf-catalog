@@ -507,9 +507,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       ? t('allItems')+' — <b>'+ALLN+'</b>'+(LANG==='en'?'':t('items'))
       : '<b>'+nAll+'</b>'+t('of')+ALLN+t('items'))
       + (DISCN ? '<button type="button" class="pendbtn discbtn" aria-pressed="'+onlyDisc+'">'+t('disc')+' '+DISCN+'</button>' : '')
+      + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">'+t('newB')+' '+NEWN+'</button>' : '')
       + (THR ? '<button type="button" class="pendbtn thobebtn" data-tk="r" aria-pressed="'+(onlyThobe==='r')+'">'+t('thobeR')+' '+THR+'</button>' : '')
       + (THM ? '<button type="button" class="pendbtn thobebtn" data-tk="m" aria-pressed="'+(onlyThobe==='m')+'">'+t('thobeM')+' '+THM+'</button>' : '')
-      + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">'+t('newB')+' '+NEWN+'</button>' : '')
       + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">'+t('pendB')+' '+PENDN+'</button>' : '')
       + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+' <span class="note">'+t('lowNote')+'</span></button>' : '');
     // الفلاتر التلاتة واحد بس شغال في نفس الوقت
