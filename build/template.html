@@ -245,6 +245,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .thobebtn[aria-pressed="true"]{background:#242E64;color:#fff}
 @media (prefers-color-scheme: dark){.thobebtn{border-color:#98A0BE!important;color:#EDEFF8}}
 .badge.tb{background:#242E64;color:#fff}
+.tfab{font-family:var(--ar);font-weight:500;font-size:12.5px;color:var(--muted)}
+.tfab b{color:var(--ink);font-weight:700}
 .szwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0}
 .szcap{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 .szcap b{color:var(--ink);font-family:var(--num)}
@@ -465,6 +467,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function isLowS(it){ return it.s==='low'; }
 
   var LOW = 50;   // أقل من كده = كمية قليلة
+  // الثوب المودرن: الخامة مختصرة على الكارت (خامة : بوليستر / خامة : سبن)
+  function thobeFab(it){
+    if(it.tk!=='m' || !it.k) return '&nbsp;';
+    var f = /سبن/.test(it.k) ? ['سبن','Spun'] : /بول/.test(it.k) ? ['بوليستر','Polyester'] : [it.k, tv('k',it.k)];
+    return '<span class="tfab">'+(LANG==='en'?'Fabric':'خامة')+' : <b>'+f[LANG==='en'?1:0]+'</b></span>';
+  }
   function isLow(it){ return !it.t && it.q!=null && it.q < LOW; }
 
   function card(it){
@@ -477,7 +485,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     b.innerHTML=(isLow(it)?'<span class="low">'+t('low')+'</span>':'')+
       ((it.n||it.d)?'<span class="tags end">'+(it.n?'<span class="newb">'+t('newB')+'</span>':'')+(it.d?'<span class="discb">'+t('disc')+'</span>':'')+'</span>':'')+
       ((isPending(it) || (it.t && !(it.g&&it.g.length))) ? PHh() : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="'+t('codeAlt')+it.c+'">')+
-      '<span class="meta"><span class="code">'+(it.t ? '&nbsp;' : it.c)+'</span>'+
+      '<span class="meta"><span class="code">'+(it.t ? thobeFab(it) : it.c)+'</span>'+
       '<span class="metarow">'+(it.t ? '<span class="badge tb">'+t('modelNo')+' '+it.mn+'</span>' : '<span class="badge">'+it.r+'</span>')+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+tv('m',it.m)+(it.cl?' · <b class="clr">'+tv('cl',it.cl)+'</b>':'')+'</span></span>';
     b.addEventListener('click',function(){ cur=shown; open(shown.indexOf(it)); });
