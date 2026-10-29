@@ -56,7 +56,8 @@
   "اناسي": "Anasi",
   "البركة": "Al Baraka",
   "برايم": "Prime",
-  "ريفال": "Rival"
+  "ريفال": "Rival",
+  "بولستر عادي": "Normal Polyester"
  },
  "models": {
   "NEW small chest": "NEW small chest",
@@ -125,7 +126,11 @@
   "نصف كم عادى عرض 34": "Regular Short Sleeve Chest 34",
   "كم عادى عرض 34": "Regular Long Sleeve Chest 34",
   "نصف كم مطرز عرض 34": "Embroidered Short Sleeve Chest 34",
-  "كم مطرز عرض 34": "Embroidered Long Sleeve Chest 34"
+  "كم مطرز عرض 34": "Embroidered Long Sleeve Chest 34",
+  "ثوب سعودى ساده": "Plain Saudi Thobe",
+  "ثوب سعودي مطرز": "Embroidered Saudi Thobe",
+  "ثوب سعودي مطرز / مطعم": "Embroidered / Inlaid Saudi Thobe",
+  "ثوب سعودي مطعم": "Inlaid Saudi Thobe"
  },
  "colors": {
   "ابيض": "White",

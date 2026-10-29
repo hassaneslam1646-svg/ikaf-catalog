@@ -241,6 +241,22 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .disctag{display:inline-block;background:#B5179E;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
 .lowtbl .disct{display:inline-block;margin-top:3px;background:#B5179E;color:#fff;font-family:var(--ar);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px}
 .discbtn{border-color:#B5179E!important;color:#B5179E;font-weight:700}
+.thobebtn{border-color:#242E64!important;color:#242E64;font-weight:700}
+.thobebtn[aria-pressed="true"]{background:#242E64;color:#fff}
+@media (prefers-color-scheme: dark){.thobebtn{border-color:#98A0BE!important;color:#EDEFF8}}
+.badge.tb{background:#242E64;color:#fff}
+.szwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sztbl{width:100%;border-collapse:collapse;font-size:13px}
+.sztbl th{background:var(--surface-2);color:var(--muted);font-weight:500;font-size:12px;text-align:start;padding:7px 8px;border-bottom:1px solid var(--line)}
+.sztbl td{padding:6px 8px;border-bottom:1px solid var(--line)}
+.sztbl tr:last-child td{border-bottom:0}
+.sztbl .c{font-family:var(--num);font-weight:600;font-size:12px;direction:ltr;text-align:left;white-space:nowrap}
+.sztbl .s{font-family:var(--num);font-weight:700;white-space:nowrap}
+.sztbl .n{font-family:var(--num);font-weight:700;text-align:center}
+.sztbl input{width:58px;padding:5px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);
+  font-family:var(--num);font-size:14px;font-weight:700;text-align:center}
+.sztbl input:focus{outline:none;border-color:var(--orange)}
+.szfoot{display:flex;justify-content:flex-end;padding:8px;background:var(--surface-2);border-top:1px solid var(--line)}
 .newbtn{border-color:#1E9E57!important;color:#1E9E57;font-weight:700}
 .lowbtn .note{font-size:11.5px;opacity:.75}
 .discbtn[aria-pressed="true"]{background:#B5179E;color:#fff}
@@ -307,6 +323,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
+    thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'],
+    addSizes:['أضف المقاسات للسلة','Add sizes to cart'], enterSizes:['اكتب كمية لمقاس واحد على الأقل','Enter a quantity for at least one size'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
     u20n:[' صنف أقل من 20 درزن',' items under 20 dozen'],
     newB:['منتج جديد','New'], pendB:['جاري التصوير','Under photo process'], lowB:['أقل من 20 درزن','Under 20 dozen'], lowNote:['(للاطلاع بدون الصور)','(view only, no photos)'],
@@ -350,7 +368,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function norm(s){ return s.replace(/[٠-٩۰-۹]/g,function(d){return AR[d];})
     .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim().toLowerCase(); }
   var LOWS = []; try{ LOWS = JSON.parse(document.getElementById('lowdata').textContent)||[]; }catch(e){ LOWS=[]; }
-  ITEMS.concat(LOWS).forEach(function(it){ it.k = it.k || ''; it.cl = it.cl || ''; it.b = it.b || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl+' '+it.b+' '+en('m',it.m)+' '+en('k',it.k)+' '+en('cl',it.cl)+' '+en('b',it.b)); });
+  ITEMS.concat(LOWS).forEach(function(it){ it._codes = it.sz ? it.sz.map(function(x){ return x[0]; }).join(' ') : it.c; it.k = it.k || ''; it.cl = it.cl || ''; it.b = it.b || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl+' '+it.b+' '+en('m',it.m)+' '+en('k',it.k)+' '+en('cl',it.cl)+' '+en('b',it.b)); });
 
   var active=null, mat=null;
   var matsEl=document.getElementById('mats');
@@ -401,6 +419,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   var shown=[];
   var onlyNew=false, NEWN=ITEMS.filter(function(it){ return it.n; }).length;
   var onlyPend=false, PENDN=ITEMS.filter(function(it){ return it.s==='pending'; }).length;
+  var onlyThobe=false;   // 'r' رسمي / 'm' مودرن
+  var THR=ITEMS.filter(function(it){ return it.t && it.tk==='r'; }).length, THM=ITEMS.filter(function(it){ return it.t && it.tk==='m'; }).length;
   var onlyDisc=false, DISCN=ITEMS.concat(LOWS).filter(function(it){ return it.d; }).length;
   var onlyLow=false;   // فلتر "أقل من 20 درزن": الجدول بس من غير الكروت
   function filtered(list){
@@ -411,8 +431,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       if(onlyPend && !isPending(it)) return false;
       if(onlyNew && !it.n) return false;
       if(onlyDisc && !it.d) return false;
+      if(onlyThobe && !(it.t && it.tk===onlyThobe)) return false;
       if(!raw) return true;
-      if(d && it.c.indexOf(d)!==-1) return true;
+      if(d && it._codes.indexOf(d)!==-1) return true;
       // "عادي" في البحث = موديل مش مطرز (الموديل اللي فيه "مطرز عرض عادى" يعني عرض عادي بس هو مطرز)
       if(t && it._t.indexOf(t)!==-1){
         var mm=norm(it.m||'');
@@ -439,20 +460,20 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function isLowS(it){ return it.s==='low'; }
 
   var LOW = 50;   // أقل من كده = كمية قليلة
-  function isLow(it){ return it.q!=null && it.q < LOW; }
+  function isLow(it){ return !it.t && it.q!=null && it.q < LOW; }
 
   function card(it){
     var b=document.createElement('button');
     b.type='button'; b.className='card';
-    var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">'+t('qty')+' <b>'+it.q+'</b></span>';
+    var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">'+t('qty')+' <b>'+it.q+'</b>'+(it.t?t('pcs'):'')+'</span>';
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+t('pics')+'</span>' : '';
     // كمية قليلة في زاوية، ومنتج جديد/مخفض في الزاوية التانية عشان مايغطوش الموديل
     b.innerHTML=(isLow(it)?'<span class="low">'+t('low')+'</span>':'')+
       ((it.n||it.d)?'<span class="tags end">'+(it.n?'<span class="newb">'+t('newB')+'</span>':'')+(it.d?'<span class="discb">'+t('disc')+'</span>':'')+'</span>':'')+
-      (isPending(it) ? PHh() : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="'+t('codeAlt')+it.c+'">')+
-      '<span class="meta"><span class="code">'+it.c+'</span>'+
-      '<span class="metarow"><span class="badge">'+it.r+'</span>'+qtyHtml+picsHtml+'</span>'+
+      ((isPending(it) || (it.t && !(it.g&&it.g.length))) ? PHh() : '<img loading="lazy" decoding="async" src="'+thumbSrc(it)+'" alt="'+t('codeAlt')+it.c+'">')+
+      '<span class="meta"><span class="code">'+(it.t ? '&nbsp;' : it.c)+'</span>'+
+      '<span class="metarow">'+(it.t ? '<span class="badge tb">'+t('modelNo')+' '+it.mn+'</span>' : '<span class="badge">'+it.r+'</span>')+qtyHtml+picsHtml+'</span>'+
       '<span class="model">'+tv('m',it.m)+(it.cl?' · <b class="clr">'+tv('cl',it.cl)+'</b>':'')+'</span></span>';
     b.addEventListener('click',function(){ cur=shown; open(shown.indexOf(it)); });
     return b;
@@ -467,24 +488,28 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     empty.hidden = onlyLow || shown.length!==0;
     clearBtn.hidden = q.value==='';
     // العدد = الكروت + أصناف جدول أقل من 20 درزن اللي مطابقة لنفس الفلتر
-    var lowMatch = (onlyNew||onlyPend) ? 0 : filtered(LOWS).length, nAll = onlyLow ? lowMatch : shown.length + lowMatch;
+    var lowMatch = (onlyNew||onlyPend||onlyThobe) ? 0 : filtered(LOWS).length, nAll = onlyLow ? lowMatch : shown.length + lowMatch;
     countEl.innerHTML = (onlyLow ? '<b>'+lowMatch+'</b>'+t('u20n')
       : nAll===ALLN
       ? t('allItems')+' — <b>'+ALLN+'</b>'+(LANG==='en'?'':t('items'))
       : '<b>'+nAll+'</b>'+t('of')+ALLN+t('items'))
       + (DISCN ? '<button type="button" class="pendbtn discbtn" aria-pressed="'+onlyDisc+'">'+t('disc')+' '+DISCN+'</button>' : '')
+      + (THR ? '<button type="button" class="pendbtn thobebtn" data-tk="r" aria-pressed="'+(onlyThobe==='r')+'">'+t('thobeR')+' '+THR+'</button>' : '')
+      + (THM ? '<button type="button" class="pendbtn thobebtn" data-tk="m" aria-pressed="'+(onlyThobe==='m')+'">'+t('thobeM')+' '+THM+'</button>' : '')
       + (NEWN ? '<button type="button" class="pendbtn newbtn" aria-pressed="'+onlyNew+'">'+t('newB')+' '+NEWN+'</button>' : '')
       + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">'+t('pendB')+' '+PENDN+'</button>' : '')
       + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+' <span class="note">'+t('lowNote')+'</span></button>' : '');
     // الفلاتر التلاتة واحد بس شغال في نفس الوقت
     var nb=countEl.querySelector('.newbtn');
-    if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=onlyDisc=false; render(); });
+    if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=onlyDisc=onlyThobe=false; render(); });
+    countEl.querySelectorAll('.thobebtn').forEach(function(bt){ bt.addEventListener('click',function(){
+      var k=bt.getAttribute('data-tk'); onlyThobe = (onlyThobe===k) ? false : k; onlyNew=onlyPend=onlyLow=onlyDisc=false; render(); }); });
     var db=countEl.querySelector('.discbtn');
-    if(db) db.addEventListener('click',function(){ onlyDisc=!onlyDisc; onlyNew=onlyPend=onlyLow=false; lowOpen=null; render(); });
+    if(db) db.addEventListener('click',function(){ onlyDisc=!onlyDisc; onlyNew=onlyPend=onlyLow=onlyThobe=false; lowOpen=null; render(); });
     var pb=countEl.querySelector('.pendbtn.pend');
-    if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; onlyNew=onlyLow=onlyDisc=false; render(); });
+    if(pb) pb.addEventListener('click',function(){ onlyPend=!onlyPend; onlyNew=onlyLow=onlyDisc=onlyThobe=false; render(); });
     var lwb=countEl.querySelector('.lowbtn');
-    if(lwb) lwb.addEventListener('click',function(){ onlyLow=!onlyLow; onlyNew=onlyPend=onlyDisc=false; lowOpen=null; render(); window.scrollTo(0,0); });
+    if(lwb) lwb.addEventListener('click',function(){ onlyLow=!onlyLow; onlyNew=onlyPend=onlyDisc=onlyThobe=false; lowOpen=null; render(); window.scrollTo(0,0); });
     renderLow();
   }
 
@@ -495,7 +520,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function lowIsOpen(){ return onlyLow || (lowOpen==null && onlyDisc) || (lowOpen!=null ? lowOpen : !!(active||mat||q.value.trim())); }
   function renderLow(){
     // "منتج جديد" و"جاري التصوير" فلاتر للكروت بس
-    if(!LOWS.length || onlyNew || onlyPend){ lowSec.hidden=true; return; }
+    if(!LOWS.length || onlyNew || onlyPend || onlyThobe){ lowSec.hidden=true; return; }
     lowShown=filtered(LOWS).sort(function(a,b){ return a.r.localeCompare(b.r) || b.q-a.q || a.c.localeCompare(b.c); });
     lowSec.hidden = lowShown.length===0;
     if(onlyLow) empty.hidden = lowShown.length!==0;
@@ -562,13 +587,14 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       '<div class="lb-head"><div><p class="lb-title">'+t('itemCode')+'<span class="newtag" hidden>'+t('newB')+'</span><span class="disctag" hidden>'+t('disc')+'</span></p><div class="lb-code"></div></div>'+
       '<button class="x" type="button" data-a="close" aria-label="'+t('close')+'">×</button></div>'+
       '<dl class="kv">'+
-      '<dt>'+t('ratio')+'</dt><dd><span class="bigbadge"></span></dd>'+
+      '<dt class="k-r">'+t('ratio')+'</dt><dd class="v-r"><span class="bigbadge"></span></dd>'+
       '<dt>'+t('qty')+'</dt><dd><span class="bigqty v-q"></span><div class="wh v-w"></div></dd>'+
       '<dt>'+t('model')+'</dt><dd class="v-m"></dd>'+
       '<dt class="k-k">'+t('fabric')+'</dt><dd class="v-k"></dd>'+
       '<dt class="k-cl">'+t('color')+'</dt><dd class="v-cl"></dd>'+
       '<dt class="k-b">'+t('brand')+'</dt><dd class="v-b"></dd>'+
       '<dt class="k-p">'+t('page')+'</dt><dd class="v-p n"></dd></dl>'+
+      '<div class="szwrap" hidden></div>'+
       '<div class="addrow"><label for="addq">'+t('orderQty')+'</label>'+
       '<input id="addq" type="text" inputmode="decimal" autocomplete="off" placeholder="0">'+
       '<button class="btn primary" data-a="add" type="button">'+t('add')+'</button></div>'+
@@ -591,6 +617,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       else if(a==='copy') copy(el);
       else if(a==='wa') shareWa(el);
       else if(a==='add') addFromLb();
+      else if(a==='addsz') addSizesFromLb();
       else if(a==='gprev') gstep(-1);
       else if(a==='gnext') gstep(1);
     });
@@ -654,13 +681,26 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     lb.querySelector('.lb-title .newtag').hidden=!it.n;
     lb.querySelector('.lb-title .disctag').hidden=!it.d;
     lb.querySelector('.bigbadge').textContent=it.r;
-    lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (isLow(it) ? '<span class="lowtag">'+t('low')+'</span>' : '');
+    lb.querySelector('.v-r').hidden = lb.querySelector('.k-r').hidden = !!it.t;
+    lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (it.t ? t('pcs') : '') + (isLow(it) ? '<span class="lowtag">'+t('low')+'</span>' : '');
+    // الثوب: جدول المقاسات (الكود / المقاس / الكمية) مكان الريشيو، والطلب من الجدول
+    var szw=lb.querySelector('.szwrap'); szw.hidden=!it.t;
+    lb.querySelector('.addrow').hidden = !!it.t;
+    lb.querySelector('.lb-code').textContent = it.t ? (t('thobeB')+' — '+t('modelNo')+' '+it.mn) : it.c;
+    if(it.t){
+      var h='<table class="sztbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('size')+'</th><th style="text-align:center">'+t('qty')+'</th><th style="text-align:center">'+t('orderQty')+'</th></tr></thead><tbody>';
+      it.sz.forEach(function(x){
+        h+='<tr><td class="c">'+x[0]+'</td><td class="s">'+x[1]+'</td><td class="n">'+x[2]+'</td>'+
+           '<td style="text-align:center"><input type="text" inputmode="decimal" autocomplete="off" data-sz="'+x[0]+'" value="'+(cart[x[0]]||'')+'" placeholder="0" aria-label="'+x[1]+'"></td></tr>';
+      });
+      szw.innerHTML=h+'</tbody></table><div class="szfoot"><button class="btn primary" data-a="addsz" type="button">'+t('addSizes')+'</button></div>';
+    } else szw.textContent='';
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
     if(it.w){ Object.keys(it.w).forEach(function(k){
       var sp=document.createElement('span'); sp.textContent=tv('w',k); var b=document.createElement('b'); b.textContent=it.w[k];
       sp.appendChild(b); wEl.appendChild(sp); }); }
     wEl.hidden=!it.w;
-    lb.querySelector('.v-m').textContent=tv('m',it.m);
+    lb.querySelector('.v-m').textContent=tv('m',it.m)+(it.t?' — '+t('modelNo')+' '+it.mn:'');
     lb.querySelector('.v-k').textContent=tv('k',it.k);
     lb.querySelector('.v-k').hidden = lb.querySelector('.k-k').hidden = !it.k;
     lb.querySelector('.v-cl').textContent=tv('cl',it.cl);
@@ -669,7 +709,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     lb.querySelector('.v-b').hidden = lb.querySelector('.k-b').hidden = !it.b;
     lb.querySelector('.v-p').textContent=it.p;
     lb.querySelector('.v-p').hidden = lb.querySelector('.k-p').hidden = (it.p==null);
-    var inC=cart[it.c];
+    var inC=it.t ? 0 : cart[it.c];
     lb.querySelector('#addq').value = inC ? inC : '';
     lb.querySelector('[data-a="add"]').textContent = inC ? t('upd') : t('add');
     var note=lb.querySelector('.addrow-note'); note.hidden=!inC; note.textContent = inC ? (t('inCart')+': '+inC) : '';
@@ -690,7 +730,9 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   clearBtn.addEventListener('click',function(){ q.value=''; q.focus(); render(); });
 
   /* ================= سلة المندوب ================= */
-  var BYCODE={}; ITEMS.concat(LOWS).forEach(function(it){ if(!BYCODE[it.c]) BYCODE[it.c]=it; });
+  var BYCODE={}; ITEMS.concat(LOWS).forEach(function(it){
+    if(it.sz){ it.sz.forEach(function(x){ BYCODE[x[0]]={c:x[0], r:x[1], q:x[2], m:it.m, k:it.k, cl:it.cl, b:it.b, g:it.g, p:null, t:1, mn:it.mn}; }); return; }
+    if(!BYCODE[it.c]) BYCODE[it.c]=it; });
   var KEY='ikaf-cart-v1', NAMEKEY='ikaf-rep-name';
   var cart={};
   function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -705,6 +747,16 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   }
   function num(v){ v=String(v||'').replace(/[٠-٩۰-۹]/g,function(d){return AR[d];}).replace(',', '.'); var n=parseFloat(v); return isFinite(n)&&n>0 ? Math.round(n*100)/100 : 0; }
 
+  function addSizesFromLb(){
+    var n=0, ch=0;
+    lb.querySelectorAll('.szwrap input[data-sz]').forEach(function(inp){
+      var c=inp.getAttribute('data-sz'), v=num(inp.value);
+      if(v){ if(cart[c]!==v){ cart[c]=v; ch++; } n++; }
+      else if(cart[c]){ delete cart[c]; ch++; }
+    });
+    if(!n && !ch){ toast(t('enterSizes')); return; }
+    persist(); toast(n ? t('added') : t('removed'));
+  }
   function addFromLb(){
     var it=cur[idx]; if(!it) return;
     var n=num(lb.querySelector('#addq').value);

@@ -267,6 +267,122 @@ def load_i18n(items):
     return out
 
 
+THOBE_EXT = (".jpg", ".jpeg", ".png", ".webp", ".jfif")
+THOBE_MAT = {"02": "بولستر عادي"}   # في الثوب بس: خامة 02 (أكواد 102...) اسمها بولستر عادي
+
+
+def build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, photos, excluded, drop_manual):
+    """الثوب (التصنيف = ثوب، الوحدة قطعة): الأكواد بتتجمع في موديل واحد
+    = نفس الخامة (خانة 2-3) + نفس اللون (خانة 11) + نفس رقم الموديل (آخر 3 خانات)،
+    والمقاس هو خانة 9-10. أي مقاس رصيده أكبر من صفر بيظهر.
+    الصورة: باسم رقم الموديل (003.jpg) لو الرقم ده لموديل واحد بس، أو باسم كود أي مقاس فيه."""
+    groups = {}
+    skipped = []
+    for code, q in stock.items():
+        if CAT.get(code) != "ثوب" or code in excluded or q <= 0:
+            continue
+        if not re.fullmatch(r"1\d{13}", code):
+            skipped.append(code)
+            continue
+        groups.setdefault((code[1:3], code[10], code[11:14]), []).append(code)
+    by_num = {}
+    for key in groups:
+        by_num.setdefault(key[2], []).append(key)
+    # صور الثوب: 003.jpg / 003 (2).jpg، أو 4 أرقام = رقم اللون + رقم الموديل (1001 = أبيض موديل 001)،
+    # أو كود مقاس 14 رقم
+    num_photos, col_photos, brand_photos = {}, {}, {}
+    for fn in sorted(os.listdir(photos_dir)):
+        # رقم الماركة - رقم اللون + رقم الموديل: 7-1001 = اكاف اورانج، أبيض، موديل 001
+        mb = re.match(r"^\s*(\d)\s*-\s*(\d)(\d{3})(?!\d)(.*?)(\.[a-z]+)$", fn, re.I)
+        if mb and mb.group(5).lower() in THOBE_EXT:
+            brand_photos.setdefault((mb.group(1), mb.group(2), mb.group(3)), []).append(
+                ((0 if not mb.group(4).strip() else 1), fn))
+            continue
+        m = re.match(r"^\s*(\d{1,4})(?!\d)(.*?)(\.[a-z]+)$", fn, re.I)
+        if not m or m.group(3).lower() not in THOBE_EXT:
+            continue
+        rank = (0 if not m.group(2).strip() else 1)
+        if len(m.group(1)) == 4:
+            col_photos.setdefault((m.group(1)[0], m.group(1)[1:]), []).append((rank, fn))
+        else:
+            num_photos.setdefault(m.group(1).zfill(3), []).append((rank, fn))
+    # موديلات ليها صورة باسم كود مقاس (عشان صورة اللون+الموديل تروح للي مالوش صورة لو الرقم متكرر)
+    has_code_photo = {key for key, codes in groups.items() if any(photos.get(c) for c in codes)}
+    gbrand = {key: {c[3] for c in codes} for key, codes in groups.items()}
+    has_brand_photo = {key for key in groups
+                       if any((b, key[1], key[2]) in brand_photos for b in gbrand[key])}
+    out, amb, used = [], [], set()
+    for key in sorted(groups, key=lambda k: (k[2], k[0], k[1])):
+        codes = groups[key]
+        files = []
+        for c in codes:                                 # صورة باسم كود مقاس
+            files += [os.path.join(photos_dir, f) for f in photos.get(c, [])
+                      if os.path.splitext(f)[0] not in drop_manual]
+        bfiles = [f for b in sorted(gbrand[key]) for _, f in sorted(brand_photos.get((b, key[1], key[2]), []))]
+        files += [os.path.join(photos_dir, f) for f in bfiles if os.path.splitext(f)[0] not in drop_manual]
+        ck = (key[1], key[2])
+        if ck in col_photos:
+            same = [k for k in groups if (k[1], k[2]) == ck and k not in has_brand_photo]
+            cand = [k for k in same if k not in has_code_photo] or same
+            if len(cand) == 1 and cand[0] == key:
+                files += [os.path.join(photos_dir, f) for _, f in sorted(col_photos[ck])
+                          if os.path.splitext(f)[0] not in drop_manual]
+            elif len(cand) > 1 and key == cand[0]:
+                amb.append(key[1] + key[2])
+        if key[2] in num_photos:
+            if len(by_num[key[2]]) == 1:
+                files += [os.path.join(photos_dir, f) for _, f in sorted(num_photos[key[2]])
+                          if os.path.splitext(f)[0] not in drop_manual]
+                used.add(key[2])
+            else:
+                amb.append(key[2])
+        names = []
+        for src in files:
+            name = f"t{key[2]}-{key[0]}{key[1]}" + ("" if not names else f"_{len(names) + 1}")
+            save_image(src, name)
+            names.append(name)
+        sizes = []
+        wsum = {}
+        def size_key(c):
+            lbl = (ratio_label(c[8:10], ratios)[0] or "").upper()
+            m = re.match(r"^(\d?X*[SML]|XXL|XXXL)?/?(\d+)?$", lbl)
+            order = {"S": 0, "M": 1, "L": 2, "XL": 3, "2XL": 4, "XXL": 4, "3XL": 5, "XXXL": 5}
+            if not m:
+                return (9, 0, lbl)
+            return (order.get(m.group(1) or "", 6), int(m.group(2) or 0), lbl)
+        for c in sorted(codes, key=size_key):
+            q = fmt_qty(stock[c])
+            if q <= 0:
+                continue
+            rl, _ = ratio_label(c[8:10], ratios)
+            w = wh_split(c, stock[c]) or {}
+            for k, v in w.items():
+                wsum[k] = wsum.get(k, 0) + v
+            sizes.append([c, rl or c[8:10], q, w])
+        if not sizes:
+            continue
+        rep = max(codes, key=lambda c: stock[c])
+        _, mn = width_label(rep[4:6], models)
+        it = {"p": None, "c": sizes[0][0], "t": 1, "r": "", "mn": key[2], "m": mn or "",
+              "k": THOBE_MAT.get(key[0], materials.get(key[0], "")), "cl": colors.get(key[1], ""), "b": brands.get(rep[3], ""),
+              "q": sum(x[2] for x in sizes), "sz": [[x[0], x[1], x[2]] + ([x[3]] if x[3] else []) for x in sizes],
+              "rn": ""}
+        # رسمي = ساده، مودرن = مطعم / مطرز
+        it["tk"] = "m" if re.search("مطرز|مطعم", mn or "") else "r"
+        if wsum:
+            it["w"] = wsum
+        if names:
+            it["g"] = names
+        out.append(it)
+    log(f"الثوب: {len(out)} موديل ({sum(len(x['sz']) for x in out)} مقاس) — "
+        f"{sum(1 for x in out if x.get('g'))} بصورة")
+    if amb:
+        log(f"!! صور ثوب باسم رقم موديل متكرر لأكتر من ثوب (سمّيها بكود أي مقاس): {sorted(set(amb))}")
+    if skipped:
+        log(f"ثوب اتساب عشان الكود مش 14 رقم: {sorted(skipped)}")
+    return out
+
+
 def load_excluded():
     """أكواد المستخدم طلب تتشال من الكتالوج: build/excluded.json  {"الكود": "السبب"}."""
     p = os.path.join(ROOT, "build", "excluded.json")
@@ -509,6 +625,8 @@ def main():
 
     added, low, missing, unknown = [], [], [], []
     for code in sorted(set(photos) - pdf_codes - set(excluded)):
+        if CAT.get(code) == "ثوب":
+            continue                                   # صور الثوب بتروح لقسم الثوب تحت
         q = stock.get(code)
         if q is None:
             missing.append(code)
@@ -584,6 +702,9 @@ def main():
     items = [it for it in items if not it.get("_drop")]
     if pdf_low:
         log(f"أصناف PDF اتشالت عشان رصيدها أقل من {MIN_QTY}: {pdf_low}")
+
+    # ---------- الثوب: كارت لكل موديل، وجواه جدول بالمقاسات (الكود / المقاس / الكمية بالقطعة) ----------
+    items += build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, photos, excluded, drop_manual)
 
     # علامة "منتج جديد": build/new_products.json
     npf = os.path.join(ROOT, "build", "new_products.json")
