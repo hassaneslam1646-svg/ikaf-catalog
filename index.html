@@ -245,7 +245,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .thobebtn[aria-pressed="true"]{background:#242E64;color:#fff}
 @media (prefers-color-scheme: dark){.thobebtn{border-color:#98A0BE!important;color:#EDEFF8}}
 .badge.tb{background:#242E64;color:#fff}
-.szwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.szwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0}
+.szcap{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.szcap b{color:var(--ink);font-family:var(--num)}
+.szscroll{max-height:min(46vh,420px);overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.szscroll::-webkit-scrollbar{width:8px}.szscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.sztbl thead th{position:sticky;top:0;z-index:1}
 .sztbl{width:100%;border-collapse:collapse;font-size:13px}
 .sztbl th{background:var(--surface-2);color:var(--muted);font-weight:500;font-size:12px;text-align:start;padding:7px 8px;border-bottom:1px solid var(--line)}
 .sztbl td{padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -323,7 +328,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
-    thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'],
+    thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'], scrollMore:['↕ اسحب الجدول لباقي المقاسات','↕ Scroll for all sizes'],
     addSizes:['أضف المقاسات للسلة','Add sizes to cart'], enterSizes:['اكتب كمية لمقاس واحد على الأقل','Enter a quantity for at least one size'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
     u20n:[' صنف أقل من 20 درزن',' items under 20 dozen'],
@@ -688,12 +693,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     lb.querySelector('.addrow').hidden = !!it.t;
     lb.querySelector('.lb-code').textContent = it.t ? (t('thobeB')+' — '+t('modelNo')+' '+it.mn) : it.c;
     if(it.t){
-      var h='<table class="sztbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('size')+'</th><th style="text-align:center">'+t('qty')+'</th><th style="text-align:center">'+t('orderQty')+'</th></tr></thead><tbody>';
+      var h='<div class="szcap"><span>'+t('sizes')+': <b>'+it.sz.length+'</b></span>'+(it.sz.length>6?'<span>'+t('scrollMore')+'</span>':'')+'</div><div class="szscroll"><table class="sztbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('size')+'</th><th style="text-align:center">'+t('qty')+'</th><th style="text-align:center">'+t('orderQty')+'</th></tr></thead><tbody>';
       it.sz.forEach(function(x){
         h+='<tr><td class="c">'+x[0]+'</td><td class="s">'+x[1]+'</td><td class="n">'+x[2]+'</td>'+
            '<td style="text-align:center"><input type="text" inputmode="decimal" autocomplete="off" data-sz="'+x[0]+'" value="'+(cart[x[0]]||'')+'" placeholder="0" aria-label="'+x[1]+'"></td></tr>';
       });
-      szw.innerHTML=h+'</tbody></table><div class="szfoot"><button class="btn primary" data-a="addsz" type="button">'+t('addSizes')+'</button></div>';
+      szw.innerHTML=h+'</tbody></table></div><div class="szfoot"><button class="btn primary" data-a="addsz" type="button">'+t('addSizes')+'</button></div>';
     } else szw.textContent='';
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
     if(it.w){ Object.keys(it.w).forEach(function(k){
