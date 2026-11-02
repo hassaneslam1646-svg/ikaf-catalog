@@ -73,7 +73,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir _site
-          cp -r index.html full thumb photos logo.png vendor robots.txt _site/
+          cp -r index.html full thumb photos logo.png vendor robots.txt manifest.webmanifest sw.js icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

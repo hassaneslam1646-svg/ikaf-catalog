@@ -5,6 +5,14 @@
 <meta name="robots" content="noindex, nofollow, noimageindex">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>تحديث المخزون</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#242E64">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مخزون إكاف">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Poppins:wght@500;600;700&display=swap">
 <style>
@@ -57,6 +65,24 @@ img{max-width:100%}
 .langbtn{border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:2px 12px;
   font-family:var(--ar);font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.6}
 .langbtn:hover{border-color:var(--orange);color:var(--orange)}
+.instbtn{border-color:var(--orange);background:var(--orange);color:#1b1f3a;display:inline-flex;align-items:center;gap:5px}
+.instbtn:hover{background:#fff;border-color:#fff;color:var(--navy)}
+.instbtn svg{width:13px;height:13px}
+.offbar{background:#7a2b12;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:7px 14px;line-height:1.5}
+.offbar .dtx{font-family:var(--num);direction:rtl;unicode-bidi:isolate}
+.ioshint{position:fixed;inset-inline:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;background:var(--surface);color:var(--ink);
+  border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:16px 16px 14px;max-width:440px;margin:0 auto;
+  border:1px solid var(--line);font-size:14px;line-height:1.7}
+.ioshint b{color:var(--navy)}
+@media (prefers-color-scheme: dark){.ioshint b{color:var(--orange)}}
+.ioshint .hd{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ioshint .hd img{width:42px;height:42px;border-radius:10px}
+.ioshint .hd strong{font-size:15px}
+.ioshint ol{margin:4px 0 0;padding-inline-start:20px}
+.ioshint .shr{display:inline-block;vertical-align:-4px;width:18px;height:18px;color:#0a7cff}
+.ioshint .x{position:absolute;top:8px;inset-inline-end:10px;border:0;background:transparent;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.ioshint::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:var(--surface)}
+html.standalone .instbtn{display:none!important}
 html[dir="ltr"] .mark .dt{direction:ltr}
 @media (min-width:641px){html[dir="ltr"] .lb-box{flex-direction:row}}
 .searchwrap{position:relative;display:flex;align-items:center}
@@ -278,7 +304,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       <div class="titles">
         <span class="org">شركة اكاف العربية - إدارة سلسلة الامداد</span>
         <span class="mark"><span class="dash"></span><span class="ttl">تحديث المخزون</span><span class="date">__UPDATED__</span></span>
-        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button></span>
+        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button><button type="button" class="langbtn instbtn" id="inst" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span></span></button></span>
       </div>
       <img class="logo" src="logo.png" alt="إكاف IKAF" width="203" height="160">
     </div>
@@ -293,6 +319,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   </div>
 </div>
 
+<div class="offbar" id="offbar" hidden></div>
 <div class="wrap">
   <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
@@ -985,6 +1012,70 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   buildChips(); render();
   gc('', 0, true);
   gc('open-'+LANG);
+})();
+</script>
+<script>
+/* تطبيق الموبايل: تثبيت + فتح من غير نت */
+(function(){
+  var LG=function(){ try{ return localStorage.getItem('ikaf-lang')==='en'?1:0; }catch(e){ return 0; } };
+  var S={
+    inst:['ثبّت التطبيق','Install app'],
+    offl:['مفيش نت — دي آخر نسخة اتحمّلت بتاريخ','Offline — this is the last loaded version, dated'],
+    iosH:['ثبّت «مخزون إكاف» على الآيفون','Install "IKAF Stock" on iPhone'],
+    ios1:['دوس على زرار المشاركة','Tap the Share button'],
+    ios2:['اختار <b>«إضافة إلى الشاشة الرئيسية»</b> وبعدين <b>«إضافة»</b>','Choose <b>"Add to Home Screen"</b> then <b>"Add"</b>'],
+    iosNote:['لازم تكون فاتح اللينك من Safari','Open this link in Safari']
+  };
+  function t(k){ return S[k][LG()]; }
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
+  if(standalone) document.documentElement.classList.add('standalone');
+
+  if('serviceWorker' in navigator && location.protocol!=='file:'){
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+
+  // أندرويد/كمبيوتر: زرار تثبيت
+  var btn=document.getElementById('inst'), deferred=null;
+  btn.querySelector('span').textContent=t('inst');
+  document.getElementById('lang').addEventListener('click',function(){ setTimeout(function(){ btn.querySelector('span').textContent=t('inst'); net(); },0); });
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferred=e; if(!standalone) btn.hidden=false;
+  });
+  btn.addEventListener('click', function(){
+    if(deferred){ deferred.prompt(); deferred.userChoice.then(function(){ deferred=null; btn.hidden=true; }); }
+    else if(isIOS) showIOS(true);
+  });
+  window.addEventListener('appinstalled', function(){ btn.hidden=true; });
+
+  // آيفون: رسالة شرح مرة واحدة
+  var ua=navigator.userAgent;
+  var isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  function showIOS(force){
+    if(document.getElementById('ioshint')) return;
+    var seen=null; try{ seen=localStorage.getItem('ikaf-ios-hint'); }catch(e){}
+    if(seen && !force) return;
+    var d=document.createElement('div'); d.className='ioshint'; d.id='ioshint'; d.setAttribute('role','dialog');
+    var share='<svg class="shr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
+    d.innerHTML='<button class="x" type="button" aria-label="close">×</button>'+
+      '<div class="hd"><img src="icons/apple-180.png" alt=""><strong>'+t('iosH')+'</strong></div>'+
+      '<ol><li>'+t('ios1')+' '+share+'</li><li>'+t('ios2')+'</li></ol>'+
+      '<div style="color:var(--muted);font-size:12px;margin-top:4px">'+t('iosNote')+'</div>';
+    document.body.appendChild(d);
+    d.querySelector('.x').onclick=function(){ d.remove(); try{ localStorage.setItem('ikaf-ios-hint','1'); }catch(e){} };
+  }
+  if(isIOS && !standalone){
+    btn.hidden=false;
+    setTimeout(function(){ showIOS(false); }, 2500);
+  }
+
+  // مفيش نت: شريط بتاريخ النسخة
+  var bar=document.getElementById('offbar');
+  function net(){
+    if(navigator.onLine){ bar.hidden=true; return; }
+    var dt=[].map.call(document.querySelectorAll('.mark .dt'),function(x){return x.textContent;}).join(' ');
+    bar.innerHTML=t('offl')+' <span class="dtx">'+dt+'</span>'; bar.hidden=false;
+  }
+  window.addEventListener('online',net); window.addEventListener('offline',net); net();
 })();
 </script>
 <script data-goatcounter="https://eslam.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>
