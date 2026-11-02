@@ -53,7 +53,7 @@ body{
 img{max-width:100%}
 [hidden]{display:none!important}
 
-.bar{position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+.bar{position:sticky; top:0; padding-top:env(safe-area-inset-top,0px); z-index:30;
   background:var(--navy); color:#fff; box-shadow:0 6px 20px rgba(23,27,51,.18)}
 .bar-in{max-width:1180px;margin:0 auto;padding-block:12px;padding-inline:16px;
   display:flex;flex-direction:column;gap:10px}
@@ -91,8 +91,8 @@ img{max-width:100%}
 .ioshint::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:var(--surface)}
 html.standalone .instbtn{display:none!important}
 #splash{display:none}
-html.splash-on #splash{display:flex}
-html.splash-on body{overflow:hidden}
+html.splash-on #splash{display:flex;animation:sp-kill 0s 6s forwards}
+@keyframes sp-kill{to{opacity:0;visibility:hidden;pointer-events:none}}
 #splash{position:fixed;inset:0;z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   background:linear-gradient(180deg,#09193a 0%,#0c2048 45%,#10264f 100%);color:#fff;
   transition:opacity .45s ease, visibility .45s;font-family:var(--ar)}
@@ -417,6 +417,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     cartEmpty:['السلة فاضية. افتح أي صنف واكتب الكمية واضغط "أضف للسلة".','Your cart is empty. Open any item, enter the quantity and tap "Add to cart".'],
     avail:['المتاح ','Available '], over:[' — المطلوب أكتر من المتاح',' — more than available'], del:['حذف','Remove'],
     enterName:['اكتب اسمك الأول','Enter your name first'], fileFail:['حصلت مشكلة في تجهيز الملف','Could not prepare the file'],
+    iosAppDl:['تعذّر إرفاق الإكسيل من التطبيق — اتبعت الملخص نص، ولو محتاج الملف افتح اللينك من Safari','Could not attach the Excel from the app — summary sent as text; open the link in Safari for the file'],
     fileDl:['(الملف اتنزّل على الجهاز — ابعته في نفس المحادثة)','(The file was downloaded — send it in the same chat)'],
     sentQ:['الطلب اتبعت؟ تفرّغ السلة؟','Order sent? Clear the cart?'], prepFile:['جاري تجهيز الملف…','Preparing file…'],
     oTitle:['طلب مندوب — شركة اكاف العربية','Sales order — IKAF Arabian Company'], oRep:['المندوب','Sales rep'], oDate:['التاريخ','Date'], oNotes:['ملاحظات','Notes'],
@@ -951,6 +952,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var b=cartEl && cartEl.querySelector('[data-c="share"]'); if(b){ b.textContent=t('sendFile'); b.disabled=!Object.keys(cart).length; }
   }
   function downloadAndWa(f, text){
+    var iosApp=navigator.standalone===true;
+    if(iosApp){ toast(t('iosAppDl')); window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); return; }
     var a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
     window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+t('fileDl')),'_blank');
   }
@@ -1098,11 +1101,17 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       '<ol><li>'+t('ios1')+' '+share+'</li><li>'+t('ios2')+'</li></ol>'+
       '<div style="color:var(--muted);font-size:12px;margin-top:4px">'+t('iosNote')+'</div>';
     document.body.appendChild(d);
-    d.querySelector('.x').onclick=function(){ d.remove(); try{ localStorage.setItem('ikaf-ios-hint','1'); }catch(e){} };
+    try{ localStorage.setItem('ikaf-ios-hint','1'); }catch(e){}   // بتظهر مرة واحدة بس
+    var kill=function(){ d.remove(); document.removeEventListener('pointerdown',outside,true); };
+    var outside=function(e){ if(!d.contains(e.target)) kill(); };   // أي لمسة بره الرسالة بتقفلها، ومبتمنعش اللمسة
+    document.addEventListener('pointerdown',outside,true);
+    d.querySelector('.x').onclick=kill;
+    setTimeout(kill,15000);
   }
+  function busy(){ var l=document.querySelector('.lb'), c=document.querySelector('.cart'); return (l&&!l.hidden)||(c&&!c.hidden); }
   if(isIOS && !standalone){
     btn.hidden=false;
-    setTimeout(function(){ showIOS(false); }, 2500);
+    setTimeout(function(){ if(!busy()) showIOS(false); }, 2500);
   }
 
   // شاشة التحميل: ثانيتين على الأقل، ولحد ما الصفحة تخلص
@@ -1119,10 +1128,18 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 
   // مفيش نت: شريط بتاريخ النسخة
   var bar=document.getElementById('offbar');
-  function net(){
-    if(navigator.onLine){ bar.hidden=true; return; }
+  function showOff(off){
+    if(!off){ bar.hidden=true; return; }
     var dt=[].map.call(document.querySelectorAll('.mark .dt'),function(x){return x.textContent;}).join(' ');
     bar.innerHTML=t('offl')+' <span class="dtx">'+dt+'</span>'; bar.hidden=false;
+  }
+  // بنتأكد بنفسنا: الموبايل ساعات يقول متوصل وهو على واي فاي من غير نت
+  function net(){
+    if(!navigator.onLine){ showOff(true); return; }
+    if(!window.fetch || location.protocol==='file:'){ showOff(false); return; }
+    var done=false, to=setTimeout(function(){ done=true; },8000);   // نت بطيء ≠ مفيش نت: منقولش حاجة
+    fetch('robots.txt?ping='+Date.now(),{cache:'no-store'}).then(function(r){ if(!done){ done=true; clearTimeout(to); showOff(!r.ok && r.status!==404); } },
+      function(){ if(!done){ done=true; clearTimeout(to); showOff(true); } });
   }
   window.addEventListener('online',net); window.addEventListener('offline',net); net();
 })();
