@@ -29,6 +29,7 @@ jobs:
         env:
           BEFORE: ${{ github.event.before }}
         run: |
+          set -o pipefail
           shopt -s nullglob nocaseglob
           files=(stock/*.xlsx stock/*.xls *.xlsx *.xls)   # فولدر stock أو الصفحة الرئيسية للريبو
           # صور اترفعت في مكان غلط (build/ أو الصفحة الرئيسية أو stock/) بتتنقل لـ build/photos_src لوحدها
@@ -40,10 +41,11 @@ jobs:
           if [ -n "$moved" ]; then echo "صور اتنقلت لـ build/photos_src:$moved"; fi
           changed="$moved"
           if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
-            changed="$(echo $moved $(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/pieces_codes.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html build/discount_codes.txt build/tree.xlsx build/translations_en.json))"
+            changed="$(echo $moved $(git diff --name-only "$BEFORE" HEAD -- build/photos_src build/new_products.json build/new_products.txt build/pieces_codes.txt build/overrides.json build/excluded.json build/drop_photos.json build/template.html build/discount_codes.txt build/tree.xlsx build/translations_en.json build/report.py))"
           fi
           if [ ${#files[@]} -eq 0 ] && [ -z "$changed" ]; then echo "مفيش تقرير مخزون ولا صور جديدة"; exit 0; fi
           pip install --quiet pillow numpy scipy openpyxl pypdf reportlab
+          cp index.html /tmp/old_index.html   # نسخة اللينك قبل التحديث عشان التقرير
           if [ ${#files[@]} -gt 0 ]; then
             newest=""; best=0
             for f in "${files[@]}"; do
@@ -52,14 +54,16 @@ jobs:
             done
             echo "تقرير مخزون جديد: $newest"
             export STOCK_TS="$best"   # وقت رفع الملف - بيظهر جنب التاريخ
-            python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock
+            python3 build/merge_photos.py build/photos_src "$newest" build/tree.xlsx --new-stock 2>&1 | tee /tmp/build_log.txt
             git rm -q -- "${files[@]}"
             msg="تحديث المخزون تلقائي من $(basename "$newest")"
           else
             echo "اتغير: $changed"
-            python3 build/merge_photos.py build/photos_src build/stock_latest.xlsx build/tree.xlsx
+            python3 build/merge_photos.py build/photos_src build/stock_latest.xlsx build/tree.xlsx 2>&1 | tee /tmp/build_log.txt
             msg="تحديث الصور تلقائي"
           fi
+          # التقرير: بيظهر في صفحة Actions → آخر تشغيل → Summary (مش على اللينك)
+          python3 build/report.py /tmp/old_index.html index.html /tmp/build_log.txt >> "$GITHUB_STEP_SUMMARY" || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
