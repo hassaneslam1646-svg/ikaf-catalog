@@ -388,6 +388,60 @@ def build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, ph
     return out
 
 
+BANNER_MAX = 10
+BANNER_W, BANNER_H = 1200, 500
+BANNER_CARD = (0.12267, 0.11500, 0.90044, 0.77900)   # صورة الموديل جوه بوستر الكتالوج
+
+
+def build_banners(all_items):
+    """البانر اللي فوق الكروت: صور من build/banners (لحد 10، بالترتيب حسب الاسم).
+    اسم الصورة فيه كود الصنف (1-14330111024386.jpg) عشان الضغط عليها يفتح الصنف.
+    الصورة العرضية بتتعرض زي ما هي؛ الطولية (بوستر المنتج) بتتحط على خلفية بألوان إكاف."""
+    from PIL import ImageDraw, ImageFilter
+    src_dir = os.path.join(ROOT, "build", "banners")
+    if not os.path.isdir(src_dir):
+        return []
+    out_dir = os.path.join(ROOT, "photos", "banners")
+    os.makedirs(out_dir, exist_ok=True)
+    by = {it["c"]: it for it in all_items}
+    files = sorted(f for f in os.listdir(src_dir) if f.lower().endswith(THOBE_EXT))[:BANNER_MAX]
+    out = []
+    for i, fn in enumerate(files, 1):
+        im = Image.open(os.path.join(src_dir, fn)).convert("RGB")
+        m = re.search(r"(1\d{13})", fn)
+        code = m.group(1) if m else ""
+        if im.width >= im.height * 1.5:                       # صورة بانر جاهزة بالعرض
+            ban = im.resize((BANNER_W, round(im.height * BANNER_W / im.width)), Image.LANCZOS)
+        else:                                                 # صورة منتج طولية -> بانر
+            w, h = im.size
+            if abs(w / h - 0.5625) < 0.02:                    # بوستر الكتالوج: ناخد صورة الموديل بس
+                im = im.crop((int(BANNER_CARD[0] * w), int(BANNER_CARD[1] * h),
+                              int(BANNER_CARD[2] * w), int(BANNER_CARD[3] * h)))
+            ban = Image.new("RGB", (BANNER_W, BANNER_H))
+            g = ImageDraw.Draw(ban)
+            for y in range(BANNER_H):                          # تدرج كحلي
+                t = y / BANNER_H
+                g.line([(0, y), (BANNER_W, y)], fill=(int(36 - 10 * t), int(46 - 13 * t), int(100 - 20 * t)))
+            g.polygon([(0, BANNER_H), (230, BANNER_H), (470, 0), (400, 0)], fill=(250, 146, 35))
+            g.polygon([(260, BANNER_H), (300, BANNER_H), (540, 0), (500, 0)], fill=(52, 64, 128))
+            ph_h = BANNER_H - 50
+            ph = im.resize((round(im.width * ph_h / im.height), ph_h), Image.LANCZOS)
+            x0 = 70
+            sh = Image.new("L", (ph.width + 40, ph.height + 40), 0)
+            ImageDraw.Draw(sh).rounded_rectangle((20, 20, ph.width + 20, ph.height + 20), 18, fill=150)
+            ban.paste((0, 0, 0), (x0 - 12, 25 - 8), sh.filter(ImageFilter.GaussianBlur(12)))
+            mask = Image.new("L", ph.size, 0)
+            ImageDraw.Draw(mask).rounded_rectangle((0, 0, ph.width, ph.height), 16, fill=255)
+            ban.paste(ph, (x0, 25), mask)
+        name = f"b{i}"
+        ban.save(os.path.join(out_dir, name + ".webp"), "WEBP", quality=74, method=6)
+        it = by.get(code, {})
+        out.append({"i": name, "c": code if it else "",
+                    "tg": "d" if it.get("d") else ("n" if it.get("n") else "")})
+    log(f"البانر: {len(out)} صورة" + (f" (أول {BANNER_MAX} بس من {len(os.listdir(src_dir))})" if len(os.listdir(src_dir)) > BANNER_MAX else ""))
+    return out
+
+
 def load_excluded():
     """أكواد المستخدم طلب تتشال من الكتالوج: build/excluded.json  {"الكود": "السبب"}."""
     p = os.path.join(ROOT, "build", "excluded.json")
@@ -745,6 +799,7 @@ def main():
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
     tpl = tpl.replace("__LOWDATA__", json.dumps(lowlist, ensure_ascii=False))
     tpl = tpl.replace("__I18N__", json.dumps(load_i18n(items + lowlist), ensure_ascii=False))
+    tpl = tpl.replace("__BANNERS__", json.dumps(build_banners(items + lowlist), ensure_ascii=False))
     # التاريخ والوقت في مربعين منفصلين (من غير الشرطة اللي في النص)
     upd = stock_date(NEW_STOCK)
     tpl = tpl.replace("__UPDATED__", "".join(f'<span class="dt">{x.strip()}</span>' for x in upd.split("|") if x.strip()))

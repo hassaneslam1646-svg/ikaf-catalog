@@ -230,6 +230,21 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   .lb-img img{max-height:46vh}
   .lb-side{padding:16px}
 }
+/* ---------- البانر ---------- */
+.hero{position:relative;margin:0 auto 14px;max-width:820px;border-radius:16px;overflow:hidden;background:var(--navy);box-shadow:var(--shadow)}
+.hero-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.hero-track::-webkit-scrollbar{display:none}
+.hs{position:relative;flex:0 0 100%;scroll-snap-align:start;aspect-ratio:12/5;cursor:pointer;border:0;padding:0;background:none;color:#fff;text-align:start;font:inherit}
+.hs img{width:100%;height:100%;object-fit:cover;object-position:left center;display:block}
+.hs-txt{position:absolute;top:0;bottom:0;right:0;left:auto;width:52%;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:4% 5%}
+.hs-tag{align-self:flex-start;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;background:#1E9E57}
+.hs-tag.d{background:linear-gradient(100deg,#B5179E,#E5383B)}
+.hs-ttl{font-size:clamp(15px,3.6vw,26px);font-weight:800;line-height:1.25}
+.hs-sub{font-family:var(--num);font-size:clamp(11px,2.4vw,16px);color:rgba(255,255,255,.75)}
+.hs-cta{align-self:flex-start;margin-top:4px;background:var(--orange);color:#231400;font-weight:800;font-size:clamp(11px,2.4vw,15px);padding:5px 14px;border-radius:999px}
+.hero-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+.hero-dots button{width:8px;height:8px;border-radius:999px;border:0;padding:0;background:rgba(255,255,255,.45);cursor:pointer}
+.hero-dots button[aria-current="true"]{width:20px;background:var(--orange)}
 /* ---------- مخفض ---------- */
 .tags{position:absolute;top:8px;inset-inline-start:8px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:1}
 .tags .low,.tags .newb{position:static}
@@ -294,6 +309,10 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 </div>
 
 <div class="wrap">
+  <section class="hero" id="hero" hidden aria-roledescription="carousel">
+    <div class="hero-track" id="heroTrack"></div>
+    <div class="hero-dots" id="heroDots"></div>
+  </section>
   <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" hidden>
@@ -311,6 +330,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 <script id="data" type="application/json">__DATA__</script>
 <script id="lowdata" type="application/json">__LOWDATA__</script>
 <script id="i18n" type="application/json">__I18N__</script>
+<script id="banners" type="application/json">__BANNERS__</script>
 <script>
 (function(){
   var ITEMS = JSON.parse(document.getElementById('data').textContent);
@@ -330,7 +350,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
-    thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'], scrollMore:['↕ اسحب الجدول لباقي المقاسات','↕ Scroll for all sizes'],
+    thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'], heroCta:['شوف الصنف','View item'], scrollMore:['↕ اسحب الجدول لباقي المقاسات','↕ Scroll for all sizes'],
     addSizes:['أضف المقاسات للسلة','Add sizes to cart'], enterSizes:['اكتب كمية لمقاس واحد على الأقل','Enter a quantity for at least one size'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
     u20n:[' صنف أقل من 20 درزن',' items under 20 dozen'],
@@ -524,6 +544,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var lwb=countEl.querySelector('.lowbtn');
     if(lwb) lwb.addEventListener('click',function(){ onlyLow=!onlyLow; onlyNew=onlyPend=onlyDisc=onlyThobe=false; lowOpen=null; render(); window.scrollTo(0,0); });
     renderLow();
+    if(typeof heroShow==='function') heroShow();
   }
 
   /* ---------- جدول المتاح بكميات قليلة (أقل من 20 درزن، من غير صور) ---------- */
@@ -951,6 +972,35 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   gcSwitch();
   window.addEventListener('hashchange', gcSwitch);
 
+  /* ---------- البانر: لحد 10 صور بتقلب لوحدها، والضغط يفتح الصنف ---------- */
+  var BANNERS=[]; try{ BANNERS=JSON.parse(document.getElementById('banners').textContent)||[]; }catch(e){ BANNERS=[]; }
+  var heroEl=document.getElementById('hero'), heroTrack=document.getElementById('heroTrack'), heroDots=document.getElementById('heroDots'), heroTimer=null, heroIdx=0;
+  function buildHero(){
+    heroTrack.textContent=''; heroDots.textContent='';
+    BANNERS.forEach(function(bn,i){
+      var it=bn.c ? BYCODE[bn.c] : null;
+      var s=document.createElement('button'); s.type='button'; s.className='hs';
+      s.innerHTML='<img src="photos/banners/'+bn.i+'.webp" alt="" '+(i?'loading="lazy"':'')+'>'+
+        (it ? '<span class="hs-txt">'+(bn.tg?'<span class="hs-tag'+(bn.tg==='d'?' d':'')+'">'+t(bn.tg==='d'?'disc':'newB')+'</span>':'')+
+          '<span class="hs-ttl">'+tv('m',it.m)+(it.cl?' · '+tv('cl',it.cl):'')+'</span>'+
+          '<span class="hs-sub"><bdi>'+it.c+'</bdi> · '+it.r+'</span>'+
+          '<span class="hs-cta">'+t('heroCta')+'</span></span>' : '');
+      if(it) s.addEventListener('click',function(){ cur=[it]; open(0); });
+      heroTrack.appendChild(s);
+      if(BANNERS.length>1){ var d=document.createElement('button'); d.type='button'; d.setAttribute('aria-label',String(i+1));
+        d.addEventListener('click',function(){ heroGo(i); heroStart(); }); heroDots.appendChild(d); }
+    });
+    heroMark(0);
+  }
+  function heroMark(i){ heroIdx=i; [].forEach.call(heroDots.children,function(d,j){ d.setAttribute('aria-current',String(j===i)); }); }
+  function heroGo(i){ var w=heroTrack.clientWidth; heroTrack.scrollTo({left:(LANG==='en'?1:-1)*i*w, behavior:'smooth'}); heroMark(i); }
+  function heroStart(){ clearInterval(heroTimer); if(BANNERS.length>1) heroTimer=setInterval(function(){ if(!heroEl.hidden && (!lb||lb.hidden)) heroGo((heroIdx+1)%BANNERS.length); },5000); }
+  heroTrack.addEventListener('scroll',function(){ var w=heroTrack.clientWidth; if(!w) return; var i=Math.round(Math.abs(heroTrack.scrollLeft)/w); if(i!==heroIdx) heroMark(i); },{passive:true});
+  heroTrack.addEventListener('touchstart',function(){ clearInterval(heroTimer); },{passive:true});
+  heroTrack.addEventListener('touchend',heroStart,{passive:true});
+  // البانر بيستخبى أول ما المندوب يدوّر أو يشغّل فلتر
+  function heroShow(){ heroEl.hidden = !BANNERS.length || !!(active||mat||q.value.trim()||onlyNew||onlyPend||onlyLow||onlyDisc||onlyThobe); }
+
   /* ---------- تبديل اللغة ---------- */
   var langBtn=document.getElementById('lang');
   function applyStatic(){
@@ -977,12 +1027,13 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     // النوافذ بتتبني تاني باللغة الجديدة
     if(lb){ close(); lb.remove(); lb=null; }
     if(cartEl){ closeCart(); cartEl.remove(); cartEl=null; }
-    applyStatic(); updateFab(); buildChips(); render();
+    applyStatic(); updateFab(); buildChips(); render(); buildHero(); heroGo(0);
   });
 
   applyStatic();
   updateFab();
   buildChips(); render();
+  buildHero(); heroShow(); heroStart();
   gc('', 0, true);
   gc('open-'+LANG);
 })();
