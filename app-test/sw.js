@@ -1,12 +1,12 @@
 // تطبيق مخزون إكاف — نسخة مبسطة ومتوافقة مع آيفون (Safari)
 // - الصفحة: من النت الأول، ولو مفيش نت (أو النت واقف أكتر من 5 ثواني) آخر نسخة محفوظة
 // - الصور: من النت عادي زي اللينك بالظبط، ولو مفيش نت بس بنعرض المحفوظ
-const V = 'ikaf-v4';
+const V = 'ikaf-v5';
 const PAGE = V + '-page', IMG = V + '-img';
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(PAGE)
-    .then(c => Promise.all(['./', 'logo.png', 'icons/splash.webp', 'icons/icon-192.png']
+    .then(c => Promise.all(['./', '../logo.png', 'icons/splash.webp', 'icons/icon-192.png']
       .map(u => fetch(u, {cache: 'reload'}).then(r => r.ok && c.put(u, r)).catch(() => {}))))
     .then(() => self.skipWaiting()));
 });

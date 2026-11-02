@@ -75,7 +75,7 @@ jobs:
           mkdir _site
           cp -r index.html full thumb photos logo.png vendor robots.txt _site/
           # لينك تجربة مؤقت للتطبيق (منفصل عن لينك المناديب)
-          if [ -d app-test ]; then mkdir -p _site/app-test && cp -r app-test/* _site/app-test/ && cp -r full thumb photos logo.png vendor robots.txt _site/app-test/; fi
+          if [ -d app-test ]; then cp -r app-test _site/; fi   # بيستخدم صور اللينك الأصلي (../thumb ...)
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -2,13 +2,14 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
+<base href="../">
 <meta name="robots" content="noindex, nofollow, noimageindex">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>تحديث المخزون</title>
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="/ikaf-catalog/app-test/manifest.webmanifest">
 <meta name="theme-color" content="#242E64">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/ikaf-catalog/app-test/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/ikaf-catalog/app-test/icons/apple-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="تجربة إكاف">
@@ -98,7 +99,7 @@ html.splash-on #splash{display:flex;animation:sp-kill 0s 6s forwards}
   transition:opacity .45s ease, visibility .45s;font-family:var(--ar)}
 #splash.out{opacity:0;visibility:hidden}
 #splash .stage{position:relative;width:min(78vw,420px);aspect-ratio:630/525}
-#splash .lift{position:absolute;inset:0;background:url(icons/splash.webp) center/contain no-repeat;
+#splash .lift{position:absolute;inset:0;background:url(/ikaf-catalog/app-test/icons/splash.webp) center/contain no-repeat;
   animation:sp-drive 1.1s cubic-bezier(.2,.8,.25,1) both, sp-bob 1.6s ease-in-out 1.1s infinite}
 #splash .shadow{position:absolute;left:18%;right:14%;bottom:6%;height:9%;border-radius:50%;
   background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent);animation:sp-sh 1.1s cubic-bezier(.2,.8,.25,1) both}
@@ -1071,7 +1072,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   if(standalone) document.documentElement.classList.add('standalone');
 
   if('serviceWorker' in navigator && location.protocol!=='file:'){
-    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){}); });
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('/ikaf-catalog/app-test/sw.js',{scope:'/ikaf-catalog/app-test/',updateViaCache:'none'}).catch(function(){}); });
   }
 
   // أندرويد/كمبيوتر: زرار تثبيت
@@ -1097,7 +1098,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var d=document.createElement('div'); d.className='ioshint'; d.id='ioshint'; d.setAttribute('role','dialog');
     var share='<svg class="shr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
     d.innerHTML='<button class="x" type="button" aria-label="close">×</button>'+
-      '<div class="hd"><img src="icons/apple-180.png" alt=""><strong>'+t('iosH')+'</strong></div>'+
+      '<div class="hd"><img src="/ikaf-catalog/app-test/icons/apple-180.png" alt=""><strong>'+t('iosH')+'</strong></div>'+
       '<ol><li>'+t('ios1')+' '+share+'</li><li>'+t('ios2')+'</li></ol>'+
       '<div style="color:var(--muted);font-size:12px;margin-top:4px">'+t('iosNote')+'</div>';
     document.body.appendChild(d);
