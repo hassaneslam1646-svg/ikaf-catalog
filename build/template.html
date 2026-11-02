@@ -394,6 +394,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
+    oUnit:['الوحدة','Unit'], uDz:['درزن','Dozen'], uPc:['قطعة','Piece'],
+    oTotJ:['إجمالي الجلابيات','Total jalabiyas'], oTotT:['إجمالي الثوب','Total thobes'],
     thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'], scrollMore:['↕ اسحب الجدول لباقي المقاسات','↕ Scroll for all sizes'],
     addSizes:['أضف المقاسات للسلة','Add sizes to cart'], enterSizes:['اكتب كمية لمقاس واحد على الأقل','Enter a quantity for at least one size'],
     all:['الكل','All'], allMat:['كل الخامات','All fabrics'], allItems:['كل الأصناف','All items'], of:[' من ',' of '],
@@ -907,7 +909,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function stamp(){ var d=new Date(); return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function rows(){
     return Object.keys(cart).map(function(c,i){ var it=BYCODE[c];
-      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q, d:it.d?t('disc'):''}; });
+      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q, t:it.t?1:0, u:it.t?t('uPc'):t('uDz'), d:it.d?t('disc'):''}; });
   }
   function loadXlsx(){
     if(window.XLSX) return Promise.resolve(window.XLSX);
@@ -922,17 +924,22 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     var aoa=[[t('oTitle')],[t('oRep'),rep||''],[t('oDate'),when]];
     if(notes) aoa.push([t('oNotes'),notes]);
-    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oAvail'),t('disc')]);
-    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.a, r.d]); });
-    aoa.push(['',t('oTotal'),'','','','','',R.reduce(function(a,r){return a+r.q;},0),'','']);
-    return {R:R, aoa:aoa, base:base};
+    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oUnit'),t('oAvail'),t('disc')]);
+    var first=aoa.length;
+    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.u, r.a, r.d]); });
+    // الإجمالي منفصل: الجلابيات بالدرزن والثوب بالقطعة (مينفعش يتجمعوا مع بعض)
+    var tj=R.filter(function(r){return !r.t;}), tt=R.filter(function(r){return r.t;});
+    var sum=function(a){ return Math.round(a.reduce(function(x,r){return x+r.q;},0)*100)/100; };
+    if(tj.length) aoa.push(['',t('oTotJ'),'','','','','',sum(tj),t('uDz'),'','']);
+    if(tt.length) aoa.push(['',t('oTotT'),'','','','','',sum(tt),t('uPc'),'','']);
+    return {R:R, aoa:aoa, base:base, first:first};
   }
   function makeFile(X, D){
     if(X){ try{
       var ws=X.utils.aoa_to_sheet(D.aoa);
       // الكود كنص عشان الأرقام الطويلة ماتتغيرش
-      D.R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:D.aoa.length-D.R.length-1+i, c:1}); ws[ref]={t:'s', v:r.c}; });
-      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:16},{wch:9}];
+      D.R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:D.first+i, c:1}); ws[ref]={t:'s', v:r.c}; });
+      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:8},{wch:16},{wch:9}];
       var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, t('oSheet'));
       var out=X.write(wb,{bookType:'xlsx',type:'array'});
       return new File([out], D.base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -943,7 +950,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   }
   function summary(rep){
     var R=rows(), lines=[t('sOrder')+(rep||t('sRep'))+' — '+stamp(), R.length+t('sItems')];
-    R.forEach(function(r){ lines.push(r.c+' ('+r.r+') = '+r.q+(r.d?' — '+r.d:'')); });
+    R.forEach(function(r){ lines.push(r.c+' ('+r.r+') = '+r.q+' '+r.u+(r.d?' — '+r.d:'')); });
     return lines.join('\n');
   }
   var pendingFile=null;   // ملف جاهز لو المشاركة اترفضت أول مرة - الضغطة الجاية تبعته على طول
