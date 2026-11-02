@@ -1071,7 +1071,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   if(standalone) document.documentElement.classList.add('standalone');
 
   if('serviceWorker' in navigator && location.protocol!=='file:'){
-    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){}); });
   }
 
   // أندرويد/كمبيوتر: زرار تثبيت

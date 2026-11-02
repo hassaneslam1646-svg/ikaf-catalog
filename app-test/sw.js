@@ -1,49 +1,53 @@
-// تطبيق مخزون إكاف: الصفحة بتتجاب من النت الأول (عشان المخزون يبقى أحدث حاجة)
-// ولو النت فاصل بتفتح آخر نسخة اتحمّلت. الصور بتتحفظ وتتحدث في الخلفية.
-const V = 'ikaf-v3';
-const PAGE = V + '-page', IMG = V + '-img', LIB = V + '-lib';
-const CORE = ['./', 'logo.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/splash.webp'];
+// تطبيق مخزون إكاف — نسخة مبسطة ومتوافقة مع آيفون (Safari)
+// - الصفحة: من النت الأول، ولو مفيش نت (أو النت واقف أكتر من 5 ثواني) آخر نسخة محفوظة
+// - الصور: من النت عادي زي اللينك بالظبط، ولو مفيش نت بس بنعرض المحفوظ
+const V = 'ikaf-v4';
+const PAGE = V + '-page', IMG = V + '-img';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(PAGE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(PAGE)
+    .then(c => Promise.all(['./', 'logo.png', 'icons/splash.webp', 'icons/icon-192.png']
+      .map(u => fetch(u, {cache: 'reload'}).then(r => r.ok && c.put(u, r)).catch(() => {}))))
+    .then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => !k.startsWith(V)).map(k => caches.delete(k))))
+  e.waitUntil(caches.keys()
+    .then(ks => Promise.all(ks.filter(k => !k.startsWith(V)).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
-// النت لو بطيء جدًا (واي فاي من غير إنترنت مثلًا) منستناش أكتر من 5 ثواني: نفتح آخر نسخة،
-// والنسخة الجديدة بتكمل تحميل في الخلفية وتظهر في الفتحة الجاية
-async function networkFirst(req, event) {
-  const c = await caches.open(PAGE);
-  const net = fetch(req, {cache: 'no-store'}).then(r => { if (r.ok) c.put('./', r.clone()); return r; });
-  if (event) event.waitUntil(net.catch(() => {}));
-  const cached = await c.match('./');
-  if (!cached) return net.catch(() => Response.error());
-  const timeout = new Promise(res => setTimeout(() => res(null), 5000));
-  try {
-    const r = await Promise.race([net, timeout]);
-    return (r && r.ok) ? r : cached;
-  } catch (err) {
-    return cached;
-  }
-}
-async function staleWhileRevalidate(req, name) {
-  const c = await caches.open(name);
-  const hit = await c.match(req);
-  const net = fetch(req).then(r => { if (r.ok || r.type === 'opaque') c.put(req, r.clone()); return r; }).catch(() => hit);
-  return hit || net;
-}
+function timeout(ms) { return new Promise(res => setTimeout(() => res(null), ms)); }
 
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const u = new URL(req.url);
-  if (req.mode === 'navigate') { e.respondWith(networkFirst(req, e)); return; }
-  if (u.origin === location.origin) {
-    if (/\.(webp|jpe?g|png)$/i.test(u.pathname)) { e.respondWith(staleWhileRevalidate(req, IMG)); return; }
-    if (/\/(vendor\/|manifest)/.test(u.pathname)) { e.respondWith(staleWhileRevalidate(req, LIB)); return; }
+  if (u.origin !== location.origin) return;              // أي حاجة بره الموقع: المتصفح يتعامل معاها لوحده
+
+  if (req.mode === 'navigate') {
+    const net = fetch(req).then(r => {
+      if (r && r.ok) { const cl = r.clone(); caches.open(PAGE).then(c => c.put('./', cl)).catch(() => {}); }
+      return r;
+    });
+    e.respondWith(
+      Promise.race([net.catch(() => null), timeout(5000)]).then(r => {
+        if (r && r.ok) return r;
+        return caches.open(PAGE).then(c => c.match('./')).then(h => h || net);
+      })
+    );
     return;
   }
-  if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) e.respondWith(staleWhileRevalidate(req, LIB));
+
+  // الصور: النت الأول دايمًا (مفيش أي تأخير)، والمحفوظ بس لو النت فشل
+  if (/\.(webp|jpe?g|png)$/i.test(u.pathname)) {
+    e.respondWith(
+      fetch(req).then(r => {
+        if (r && r.ok && /\/(thumb|icons)\/|logo\.png$/.test(u.pathname)) {
+          const cl = r.clone();
+          e.waitUntil(caches.open(IMG).then(c => c.put(req, cl)).catch(() => {}));
+        }
+        return r;
+      }).catch(() => caches.match(req).then(h => h || Response.error()))
+    );
+  }
 });

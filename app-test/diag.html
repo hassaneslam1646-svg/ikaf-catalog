@@ -1,0 +1,26 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>فحص</title>
+<style>body{font:15px/1.6 -apple-system,Tahoma,sans-serif;margin:16px;background:#fff;color:#111}h1{font-size:18px}
+.r{padding:6px 8px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;gap:8px}.ok{color:#080}.bad{color:#c00;font-weight:700}
+img{width:60px;height:60px;object-fit:cover;border:1px solid #ccc;margin:4px}button{font-size:15px;padding:8px 14px;margin:6px 0}</style></head><body>
+<h1>فحص لينك التجربة</h1><div id="out"></div>
+<div><img id="i1" src="thumb/072.webp"><img id="i2" src="logo.png"><img id="i3" src="icons/apple-180.png"></div>
+<button id="clr">مسح التطبيق المحفوظ وإعادة المحاولة</button>
+<script>
+var out=document.getElementById('out');
+function row(k,v,good){var d=document.createElement('div');d.className='r';d.innerHTML='<span>'+k+'</span><span class="'+(good===false?'bad':good?'ok':'')+'">'+v+'</span>';out.appendChild(d);}
+row('المتصفح',navigator.userAgent.replace(/^.*?\(/,'(').slice(0,60));
+row('كتطبيق؟',(navigator.standalone||matchMedia('(display-mode: standalone)').matches)?'أيوه':'لأ (متصفح)');
+var sw='serviceWorker' in navigator; row('Service Worker مدعوم',sw?'أيوه':'لأ',sw);
+if(sw){navigator.serviceWorker.getRegistrations().then(function(rs){row('مسجّل',rs.length?rs.map(function(r){return r.scope.replace(location.origin,'')+(r.active?' (شغال)':'')}).join(' | '):'لأ');});
+ row('متحكم في الصفحة',navigator.serviceWorker.controller?'أيوه':'لأ');}
+if(window.caches)caches.keys().then(function(k){row('الكاش',k.join(', ')||'فاضي');});
+['thumb/072.webp','logo.png','photos/thumb/'].slice(0,2).forEach(function(u){var t=Date.now();
+ fetch(u+'?d='+t).then(function(r){return r.blob().then(function(b){row('تحميل '+u,r.status+' / '+Math.round(b.size/1024)+'KB / '+(Date.now()-t)+'ms',r.ok&&b.size>0);});},function(e){row('تحميل '+u,'فشل: '+e,false);});
+ var t2=Date.now(); fetch(u).then(function(r){return r.blob().then(function(b){row('عبر التطبيق '+u,r.status+' / '+Math.round(b.size/1024)+'KB / '+(Date.now()-t2)+'ms',r.ok&&b.size>0);});},function(e){row('عبر التطبيق '+u,'فشل: '+e,false);});});
+['i1','i2','i3'].forEach(function(id){var im=document.getElementById(id);function rep(){row('صورة '+im.getAttribute('src'),im.naturalWidth?'ظهرت ✓':'مظهرتش ✗',!!im.naturalWidth);}
+ if(im.complete)rep();else{im.onload=rep;im.onerror=rep;}});
+document.getElementById('clr').onclick=function(){Promise.all([
+ navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));}):0,
+ window.caches?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0]).then(function(){alert('اتمسح ✓ — اقفل الصفحة وافتح لينك التجربة تاني');});};
+</script></body></html>
