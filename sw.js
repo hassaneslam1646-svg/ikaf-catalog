@@ -1,8 +1,8 @@
 // تطبيق مخزون إكاف: الصفحة بتتجاب من النت الأول (عشان المخزون يبقى أحدث حاجة)
 // ولو النت فاصل بتفتح آخر نسخة اتحمّلت. الصور بتتحفظ وتتحدث في الخلفية.
-const V = 'ikaf-v1';
+const V = 'ikaf-v2';
 const PAGE = V + '-page', IMG = V + '-img', LIB = V + '-lib';
-const CORE = ['./', 'logo.png', 'manifest.webmanifest', 'icons/icon-192.png'];
+const CORE = ['./', 'logo.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/splash.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(PAGE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
