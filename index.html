@@ -358,7 +358,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     fileDl:['(الملف اتنزّل على الجهاز — ابعته في نفس المحادثة)','(The file was downloaded — send it in the same chat)'],
     sentQ:['الطلب اتبعت؟ تفرّغ السلة؟','Order sent? Clear the cart?'], prepFile:['جاري تجهيز الملف…','Preparing file…'],
     oTitle:['طلب مندوب — شركة اكاف العربية','Sales order — IKAF Arabian Company'], oRep:['المندوب','Sales rep'], oDate:['التاريخ','Date'], oNotes:['ملاحظات','Notes'],
-    oNo:['م','#'], oTotal:['الإجمالي','Total'], oAvail:['المتاح وقت الطلب','Available at order time'], oSheet:['الطلب','Order'],
+    oNo:['م','#'], oTotal:['الإجمالي','Total'], oAvail:['المتاح وقت الطلب','Available at order time'], oAv:['متاح ','Avail. '], oSheet:['الطلب','Order'],
     sOrder:['طلب ','Order from '], sRep:['مندوب','sales rep'], sItems:[' صنف:',' items:'], waCode:['كود: ','Code: '],
     close:['إغلاق','Close'], cartAria:['سلة المندوب','Sales rep cart']
   };
@@ -746,7 +746,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 
   /* ================= سلة المندوب ================= */
   var BYCODE={}; ITEMS.concat(LOWS).forEach(function(it){
-    if(it.sz){ it.sz.forEach(function(x){ BYCODE[x[0]]={c:x[0], r:x[1], q:x[2], m:it.m, k:it.k, cl:it.cl, b:it.b, g:it.g, p:null, t:1, mn:it.mn}; }); return; }
+    if(it.sz){ it.sz.forEach(function(x){ BYCODE[x[0]]={c:x[0], r:x[1], q:x[2], w:x[3], m:it.m, k:it.k, cl:it.cl, b:it.b, g:it.g, p:null, t:1, mn:it.mn}; }); return; }
     if(!BYCODE[it.c]) BYCODE[it.c]=it; });
   var KEY='ikaf-cart-v1', NAMEKEY='ikaf-rep-name';
   var cart={};
@@ -844,7 +844,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function stamp(){ var d=new Date(); return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function rows(){
     return Object.keys(cart).map(function(c,i){ var it=BYCODE[c];
-      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q, t:it.t?1:0, u:it.t?t('uPc'):t('uDz'), d:it.d?t('disc'):''}; });
+      return {n:i+1, c:c, r:it.r, m:tv('m',it.m), k:tv('k',it.k||''), cl:tv('cl',it.cl||''), b:tv('b',it.b||''), q:cart[c], a:it.q, w:it.w||{}, t:it.t?1:0, u:it.t?t('uPc'):t('uDz'), d:it.d?t('disc'):''}; });
   }
   function loadXlsx(){
     if(window.XLSX) return Promise.resolve(window.XLSX);
@@ -859,22 +859,28 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var base='IKAF-order-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     var aoa=[[t('oTitle')],[t('oRep'),rep||''],[t('oDate'),when]];
     if(notes) aoa.push([t('oNotes'),notes]);
-    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oUnit'),t('oAvail'),t('disc')]);
+    // المتاح وقت الطلب: عمود لكل مستودع، واللي مفيهوش رصيد لأي صنف في الطلب ميتحطش أصلًا
+    var WH=['جدة','الرياض','مكة'], seen={};
+    R.forEach(function(r){ Object.keys(r.w).forEach(function(k){ if(r.w[k]>0) seen[k]=1; }); });
+    var whs=WH.filter(function(k){return seen[k];}).concat(Object.keys(seen).filter(function(k){return WH.indexOf(k)<0;}));
+    var blank=whs.map(function(){return '';});
+    aoa.push([]); aoa.push([t('oNo'),t('thCode'),t('ratio'),t('model'),t('fabric'),t('color'),t('brand'),t('orderQty'),t('oUnit')]
+      .concat(whs.map(function(k){ return t('oAv')+tv('w',k); }),[t('disc')]));
     var first=aoa.length;
-    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.u, r.a, r.d]); });
+    R.forEach(function(r){ aoa.push([r.n, r.c, r.r, r.m, r.k, r.cl, r.b, r.q, r.u].concat(whs.map(function(k){ return r.w[k]>0 ? r.w[k] : ''; }),[r.d])); });
     // الإجمالي منفصل: الجلابيات بالدرزن والثوب بالقطعة (مينفعش يتجمعوا مع بعض)
     var tj=R.filter(function(r){return !r.t;}), tt=R.filter(function(r){return r.t;});
     var sum=function(a){ return Math.round(a.reduce(function(x,r){return x+r.q;},0)*100)/100; };
-    if(tj.length) aoa.push(['',t('oTotJ'),'','','','','',sum(tj),t('uDz'),'','']);
-    if(tt.length) aoa.push(['',t('oTotT'),'','','','','',sum(tt),t('uPc'),'','']);
-    return {R:R, aoa:aoa, base:base, first:first};
+    if(tj.length) aoa.push(['',t('oTotJ'),'','','','','',sum(tj),t('uDz')].concat(blank,['']));
+    if(tt.length) aoa.push(['',t('oTotT'),'','','','','',sum(tt),t('uPc')].concat(blank,['']));
+    return {R:R, aoa:aoa, base:base, first:first, nwh:whs.length};
   }
   function makeFile(X, D){
     if(X){ try{
       var ws=X.utils.aoa_to_sheet(D.aoa);
       // الكود كنص عشان الأرقام الطويلة ماتتغيرش
       D.R.forEach(function(r,i){ var ref=X.utils.encode_cell({r:D.first+i, c:1}); ws[ref]={t:'s', v:r.c}; });
-      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:8},{wch:16},{wch:9}];
+      ws['!cols']=[{wch:5},{wch:18},{wch:10},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:8}].concat(Array.apply(null,Array(D.nwh)).map(function(){return {wch:12};}),[{wch:9}]);
       var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, t('oSheet'));
       var out=X.write(wb,{bookType:'xlsx',type:'array'});
       return new File([out], D.base+'.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
