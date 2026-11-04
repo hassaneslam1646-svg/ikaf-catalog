@@ -76,7 +76,7 @@ img{max-width:100%}
 .instbtn:hover{background:#fff;border-color:#fff;color:var(--navy)}
 .instbtn svg{width:13px;height:13px}
 .offbar{background:#7a2b12;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:7px 14px;line-height:1.5}
-.offbar .dtx{font-family:var(--num);direction:rtl;unicode-bidi:isolate}
+.offbar .dtx{font-family:var(--num);direction:rtl;unicode-bidi:isolate;white-space:nowrap;display:inline-block}
 .ioshint{position:fixed;inset-inline:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;background:var(--surface);color:var(--ink);
   border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:16px 16px 14px;max-width:440px;margin:0 auto;
   border:1px solid var(--line);font-size:14px;line-height:1.7}
@@ -1073,7 +1073,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   var LG=function(){ try{ return localStorage.getItem('ikaf-lang')==='en'?1:0; }catch(e){ return 0; } };
   var S={
     inst:['ثبّت التطبيق','Install app'],
-    offl:['مفيش نت — دي آخر نسخة اتحمّلت بتاريخ','Offline — this is the last loaded version, dated'],
+    offl:['غير متصل بالإنترنت — الظاهر أمامك آخر نسخة حمّلتها بوجود إنترنت','Offline — you are viewing the last version loaded while online'],
     iosH:['ثبّت «مخزون إكاف» على الآيفون','Install "IKAF Stock" on iPhone'],
     ios1:['دوس على زرار المشاركة','Tap the Share button'],
     ios2:['اختار <b>«إضافة إلى الشاشة الرئيسية»</b> وبعدين <b>«إضافة»</b>','Choose <b>"Add to Home Screen"</b> then <b>"Add"</b>'],
@@ -1144,7 +1144,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function showOff(off){
     if(!off){ bar.hidden=true; return; }
     var dt=[].map.call(document.querySelectorAll('.mark .dt'),function(x){return x.textContent;}).join(' ');
-    bar.innerHTML=t('offl')+' <span class="dtx">'+dt+'</span>'; bar.hidden=false;
+    bar.innerHTML=t('offl')+' <span class="dtx">('+dt+')</span>'; bar.hidden=false;
   }
   // بنتأكد بنفسنا: الموبايل ساعات يقول متوصل وهو على واي فاي من غير نت
   function net(){
