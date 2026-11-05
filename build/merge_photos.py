@@ -282,7 +282,7 @@ def build_thobe(stock, ratios, models, materials, colors, brands, photos_dir, ph
     groups = {}
     skipped = []
     for code, q in stock.items():
-        if CAT.get(code) != "ثوب" or code in excluded or q <= 0:
+        if CAT.get(code) != "ثوب" or code in excluded or q <= 0 or ("ثوب:" + code[11:14]) in excluded:   # "ثوب:008" = إخفاء موديل الثوب كله
             continue
         if not re.fullmatch(r"1\d{13}", code):
             skipped.append(code)
