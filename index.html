@@ -1105,7 +1105,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   var isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
   function showIOS(force){
     if(document.getElementById('ioshint')) return;
-    var seen=null; try{ seen=localStorage.getItem('ikaf-ios-hint'); }catch(e){}
+    var seen=null; try{ seen=localStorage.getItem('ikaf-ios-hint-v2'); }catch(e){}
     if(seen && !force) return;
     var d=document.createElement('div'); d.className='ioshint'; d.id='ioshint'; d.setAttribute('role','dialog');
     var share='<svg class="shr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
@@ -1114,7 +1114,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       '<ol><li>'+t('ios1')+' '+share+'</li><li>'+t('ios2')+'</li></ol>'+
       '<div style="color:var(--muted);font-size:12px;margin-top:4px">'+t('iosNote')+'</div>';
     document.body.appendChild(d);
-    try{ localStorage.setItem('ikaf-ios-hint','1'); }catch(e){}   // بتظهر مرة واحدة بس
+    try{ localStorage.setItem('ikaf-ios-hint-v2','1'); }catch(e){}   // بتظهر مرة واحدة بس
     var kill=function(){ d.remove(); document.removeEventListener('pointerdown',outside,true); };
     var outside=function(e){ if(!d.contains(e.target)) kill(); };   // أي لمسة بره الرسالة بتقفلها، ومبتمنعش اللمسة
     document.addEventListener('pointerdown',outside,true);
