@@ -5,6 +5,21 @@
 <meta name="robots" content="noindex, nofollow, noimageindex">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>تحديث المخزون</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#242E64">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مخزون إكاف">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+/* شاشة التحميل: في التطبيق المتثبّت بس (أو ?splash للمعاينة) */
+(function(){try{
+  var sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  if(sa||/[?&]splash\b/.test(location.search)) document.documentElement.className+=' splash-on';
+}catch(e){}})();
+</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Poppins:wght@500;600;700&display=swap">
 <style>
@@ -38,7 +53,7 @@ body{
 img{max-width:100%}
 [hidden]{display:none!important}
 
-.bar{position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+.bar{position:sticky; top:0; padding-top:env(safe-area-inset-top,0px); z-index:30;
   background:var(--navy); color:#fff; box-shadow:0 6px 20px rgba(23,27,51,.18)}
 .bar-in{max-width:1180px;margin:0 auto;padding-block:12px;padding-inline:16px;
   display:flex;flex-direction:column;gap:10px}
@@ -57,6 +72,48 @@ img{max-width:100%}
 .langbtn{border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:2px 12px;
   font-family:var(--ar);font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.6}
 .langbtn:hover{border-color:var(--orange);color:var(--orange)}
+.instbtn{border-color:var(--orange);background:var(--orange);color:#1b1f3a;display:inline-flex;align-items:center;gap:5px}
+.instbtn:hover{background:#fff;border-color:#fff;color:var(--navy)}
+.instbtn svg{width:13px;height:13px}
+.offbar{background:#7a2b12;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:7px 14px;line-height:1.5}
+.offbar .dtx{font-family:var(--num);direction:rtl;unicode-bidi:isolate;white-space:nowrap;display:inline-block}
+.ioshint{position:fixed;inset-inline:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;background:var(--surface);color:var(--ink);
+  border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:16px 16px 14px;max-width:440px;margin:0 auto;
+  border:1px solid var(--line);font-size:14px;line-height:1.7}
+.ioshint b{color:var(--navy)}
+@media (prefers-color-scheme: dark){.ioshint b{color:var(--orange)}}
+.ioshint .hd{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ioshint .hd img{width:42px;height:42px;border-radius:10px}
+.ioshint .hd strong{font-size:15px}
+.ioshint ol{margin:4px 0 0;padding-inline-start:20px}
+.ioshint .shr{display:inline-block;vertical-align:-4px;width:18px;height:18px;color:#0a7cff}
+.ioshint .x{position:absolute;top:8px;inset-inline-end:10px;border:0;background:transparent;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.ioshint::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:var(--surface)}
+html.standalone .instbtn{display:none!important}
+#splash{display:none}
+html.splash-on #splash{display:flex;animation:sp-kill 0s 6s forwards}
+@keyframes sp-kill{to{opacity:0;visibility:hidden;pointer-events:none}}
+#splash{position:fixed;inset:0;z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:linear-gradient(180deg,#001736 0%,#011c42 45%,#08224d 100%);color:#fff;
+  transition:opacity .45s ease, visibility .45s;font-family:var(--ar)}
+#splash.out{opacity:0;visibility:hidden}
+#splash .stage{position:relative;width:min(78vw,420px);aspect-ratio:630/525}
+#splash .lift{position:absolute;inset:0;background:url(icons/splash.webp) center/contain no-repeat;
+  animation:sp-drive 1.1s cubic-bezier(.2,.8,.25,1) both, sp-bob 1.6s ease-in-out 1.1s infinite}
+#splash .shadow{position:absolute;left:18%;right:14%;bottom:6%;height:9%;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent);animation:sp-sh 1.1s cubic-bezier(.2,.8,.25,1) both}
+#splash .name{font-size:22px;font-weight:800;letter-spacing:.01em;margin-top:4px;opacity:0;animation:sp-fade .5s .7s both}
+#splash .msg{font-size:13px;color:rgba(255,255,255,.65);opacity:0;animation:sp-fade .5s .9s both}
+#splash .bar{width:min(52vw,220px);height:5px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:10px;
+  opacity:0;animation:sp-fade .4s .8s both}
+#splash .bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#FA9223,#ffc27a);
+  animation:sp-load 1.9s .2s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes sp-drive{from{transform:translateX(-70%) rotate(-2deg);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
+@keyframes sp-sh{from{transform:translateX(-70%) scaleX(.6);opacity:0}to{transform:none;opacity:1}}
+@keyframes sp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5%)}}
+@keyframes sp-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes sp-load{to{width:100%}}
+@media (prefers-reduced-motion: reduce){#splash .lift,#splash .shadow{animation:none}}
 html[dir="ltr"] .mark .dt{direction:ltr}
 @media (min-width:641px){html[dir="ltr"] .lb-box{flex-direction:row}}
 .searchwrap{position:relative;display:flex;align-items:center}
@@ -271,6 +328,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <div class="stage"><div class="shadow"></div><div class="lift"></div></div>
+  <div class="name">مخزون إكاف</div>
+  <div class="msg" id="splashmsg">جاري تحميل آخر تحديث…</div>
+  <div class="bar"><i></i></div>
+</div>
 
 <div class="bar">
   <div class="bar-in">
@@ -278,7 +341,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       <div class="titles">
         <span class="org">شركة اكاف العربية - إدارة سلسلة الامداد</span>
         <span class="mark"><span class="dash"></span><span class="ttl">تحديث المخزون</span><span class="date"><span class="dt">5-11-2026</span><span class="dt">1:56 م</span></span></span>
-        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button></span>
+        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button><button type="button" class="langbtn instbtn" id="inst" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span></span></button></span>
       </div>
       <img class="logo" src="logo.png" alt="إكاف IKAF" width="203" height="160">
     </div>
@@ -293,6 +356,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   </div>
 </div>
 
+<div class="offbar" id="offbar" hidden></div>
 <div class="wrap">
   <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
@@ -355,6 +419,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     cartEmpty:['السلة فاضية. افتح أي صنف واكتب الكمية واضغط "أضف للسلة".','Your cart is empty. Open any item, enter the quantity and tap "Add to cart".'],
     avail:['المتاح ','Available '], over:[' — المطلوب أكتر من المتاح',' — more than available'], del:['حذف','Remove'],
     enterName:['اكتب اسمك الأول','Enter your name first'], fileFail:['حصلت مشكلة في تجهيز الملف','Could not prepare the file'],
+    iosAppDl:['تعذّر إرفاق الإكسيل من التطبيق — اتبعت الملخص نص، ولو محتاج الملف افتح اللينك من Safari','Could not attach the Excel from the app — summary sent as text; open the link in Safari for the file'],
     fileDl:['(الملف اتنزّل على الجهاز — ابعته في نفس المحادثة)','(The file was downloaded — send it in the same chat)'],
     sentQ:['الطلب اتبعت؟ تفرّغ السلة؟','Order sent? Clear the cart?'], prepFile:['جاري تجهيز الملف…','Preparing file…'],
     oTitle:['طلب مندوب — شركة اكاف العربية','Sales order — IKAF Arabian Company'], oRep:['المندوب','Sales rep'], oDate:['التاريخ','Date'], oNotes:['ملاحظات','Notes'],
@@ -900,6 +965,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var b=cartEl && cartEl.querySelector('[data-c="share"]'); if(b){ b.textContent=t('sendFile'); b.disabled=!Object.keys(cart).length; }
   }
   function downloadAndWa(f, text){
+    var iosApp=navigator.standalone===true;
+    if(iosApp){ toast(t('iosAppDl')); window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); return; }
     var a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
     window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+t('fileDl')),'_blank');
   }
@@ -998,6 +1065,96 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   buildChips(); render();
   gc('', 0, true);
   gc('open-'+LANG);
+})();
+</script>
+<script>
+/* تطبيق الموبايل: تثبيت + فتح من غير نت */
+(function(){
+  var LG=function(){ try{ return localStorage.getItem('ikaf-lang')==='en'?1:0; }catch(e){ return 0; } };
+  var S={
+    inst:['ثبّت التطبيق','Install app'],
+    offl:['غير متصل بالإنترنت — الظاهر أمامك آخر نسخة حمّلتها بوجود إنترنت','Offline — you are viewing the last version loaded while online'],
+    iosH:['ثبّت «مخزون إكاف» على الآيفون','Install "IKAF Stock" on iPhone'],
+    ios1:['دوس على زرار المشاركة','Tap the Share button'],
+    ios2:['اختار <b>«إضافة إلى الشاشة الرئيسية»</b> وبعدين <b>«إضافة»</b>','Choose <b>"Add to Home Screen"</b> then <b>"Add"</b>'],
+    iosNote:['لازم تكون فاتح اللينك من Safari','Open this link in Safari']
+  };
+  function t(k){ return S[k][LG()]; }
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
+  if(standalone) document.documentElement.classList.add('standalone');
+
+  if('serviceWorker' in navigator && location.protocol!=='file:'){
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){}); });
+  }
+
+  // أندرويد/كمبيوتر: زرار تثبيت
+  var btn=document.getElementById('inst'), deferred=null;
+  btn.querySelector('span').textContent=t('inst');
+  document.getElementById('lang').addEventListener('click',function(){ setTimeout(function(){ btn.querySelector('span').textContent=t('inst'); net(); },0); });
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferred=e; if(!standalone) btn.hidden=false;
+  });
+  btn.addEventListener('click', function(){
+    if(deferred){ deferred.prompt(); deferred.userChoice.then(function(){ deferred=null; btn.hidden=true; }); }
+    else if(isIOS) showIOS(true);
+  });
+  window.addEventListener('appinstalled', function(){ btn.hidden=true; });
+
+  // آيفون: رسالة شرح مرة واحدة
+  var ua=navigator.userAgent;
+  var isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  function showIOS(force){
+    if(document.getElementById('ioshint')) return;
+    var seen=null; try{ seen=localStorage.getItem('ikaf-ios-hint'); }catch(e){}
+    if(seen && !force) return;
+    var d=document.createElement('div'); d.className='ioshint'; d.id='ioshint'; d.setAttribute('role','dialog');
+    var share='<svg class="shr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
+    d.innerHTML='<button class="x" type="button" aria-label="close">×</button>'+
+      '<div class="hd"><img src="icons/apple-180.png" alt=""><strong>'+t('iosH')+'</strong></div>'+
+      '<ol><li>'+t('ios1')+' '+share+'</li><li>'+t('ios2')+'</li></ol>'+
+      '<div style="color:var(--muted);font-size:12px;margin-top:4px">'+t('iosNote')+'</div>';
+    document.body.appendChild(d);
+    try{ localStorage.setItem('ikaf-ios-hint','1'); }catch(e){}   // بتظهر مرة واحدة بس
+    var kill=function(){ d.remove(); document.removeEventListener('pointerdown',outside,true); };
+    var outside=function(e){ if(!d.contains(e.target)) kill(); };   // أي لمسة بره الرسالة بتقفلها، ومبتمنعش اللمسة
+    document.addEventListener('pointerdown',outside,true);
+    d.querySelector('.x').onclick=kill;
+    setTimeout(kill,15000);
+  }
+  function busy(){ var l=document.querySelector('.lb'), c=document.querySelector('.cart'); return (l&&!l.hidden)||(c&&!c.hidden); }
+  if(isIOS && !standalone){
+    btn.hidden=false;
+    setTimeout(function(){ if(!busy()) showIOS(false); }, 2500);
+  }
+
+  // شاشة التحميل: ثانيتين على الأقل، ولحد ما الصفحة تخلص
+  var sp=document.getElementById('splash');
+  if(document.documentElement.classList.contains('splash-on')){
+    if(LG()) { sp.querySelector('.name').textContent='IKAF Stock'; document.getElementById('splashmsg').textContent='Loading the latest update…'; }
+    var t0=Date.now(), done=false;
+    var hide=function(){ if(done) return; done=true; sp.classList.add('out');
+      setTimeout(function(){ document.documentElement.classList.remove('splash-on'); sp.remove(); },500); };
+    var ready=function(){ setTimeout(hide, Math.max(0,2000-(Date.now()-t0))); };
+    if(document.readyState==='complete') ready(); else window.addEventListener('load',ready);
+    setTimeout(hide,6000);   // أمان: متعلقش أبدًا
+  } else if(sp){ sp.remove(); }
+
+  // مفيش نت: شريط بتاريخ النسخة
+  var bar=document.getElementById('offbar');
+  function showOff(off){
+    if(!off){ bar.hidden=true; return; }
+    var dt=[].map.call(document.querySelectorAll('.mark .dt'),function(x){return x.textContent;}).join(' ');
+    bar.innerHTML=t('offl')+' <span class="dtx">('+dt+')</span>'; bar.hidden=false;
+  }
+  // بنتأكد بنفسنا: الموبايل ساعات يقول متوصل وهو على واي فاي من غير نت
+  function net(){
+    if(!navigator.onLine){ showOff(true); return; }
+    if(!window.fetch || location.protocol==='file:'){ showOff(false); return; }
+    var done=false, to=setTimeout(function(){ done=true; },8000);   // نت بطيء ≠ مفيش نت: منقولش حاجة
+    fetch('robots.txt?ping='+Date.now(),{cache:'no-store'}).then(function(r){ if(!done){ done=true; clearTimeout(to); showOff(!r.ok && r.status!==404); } },
+      function(){ if(!done){ done=true; clearTimeout(to); showOff(true); } });
+  }
+  window.addEventListener('online',net); window.addEventListener('offline',net); net();
 })();
 </script>
 <script data-goatcounter="https://eslam.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>

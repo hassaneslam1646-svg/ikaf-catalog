@@ -1,6 +1,6 @@
 {
-  "name": "تجربة مخزون إكاف",
-  "short_name": "تجربة إكاف",
+  "name": "مخزون إكاف",
+  "short_name": "مخزون إكاف",
   "description": "تحديث المخزون - شركة اكاف العربية",
   "lang": "ar",
   "dir": "rtl",
@@ -20,6 +20,12 @@
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },

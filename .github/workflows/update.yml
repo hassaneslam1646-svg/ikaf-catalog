@@ -73,9 +73,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir _site
-          cp -r index.html full thumb photos logo.png vendor robots.txt _site/
-          # لينك تجربة مؤقت للتطبيق (منفصل عن لينك المناديب)
-          if [ -d app-test ]; then cp -r app-test _site/; fi   # بيستخدم صور اللينك الأصلي (../thumb ...)
+          cp -r index.html full thumb photos logo.png vendor robots.txt manifest.webmanifest sw.js icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
