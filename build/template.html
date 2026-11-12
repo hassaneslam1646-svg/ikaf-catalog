@@ -135,6 +135,14 @@ html[dir="ltr"] .mark .dt{direction:ltr}
 .mats .chip{font-family:var(--ar);font-weight:500}
 .mats .chip[aria-pressed="true"]{background:#fff;border-color:#fff;color:var(--navy);font-weight:700}
 .chip[disabled]{opacity:.35;cursor:default}
+.whs{margin-top:8px}
+.whs .chip{font-family:var(--ar);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.whs .chip svg{width:13px;height:13px;opacity:.85}
+.whs .chip[aria-pressed="true"]{background:#2bb673;border-color:#2bb673;color:#fff}
+.sortbar{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:0 0 6px;font-size:13px;color:var(--muted)}
+.sortbar select{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.wh .on{outline:2px solid #2bb673;border-radius:6px}
+.whq{font-size:12px;color:#2bb673;font-weight:700;margin-inline-start:6px}
 
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
 .count{color:var(--muted);font-size:13.5px;margin:0 0 12px}
@@ -353,11 +361,13 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     </div>
     <div class="chips" id="chips"></div>
     <div class="chips mats" id="mats" hidden></div>
+    <div class="chips whs" id="whs"></div>
   </div>
 </div>
 
 <div class="offbar" id="offbar" hidden></div>
 <div class="wrap">
+  <div class="sortbar"><label for="sortsel" id="sortlbl">ترتيب</label><select id="sortsel"></select></div>
   <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" hidden>
@@ -394,6 +404,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
+    whAll:['كل المستودعات','All warehouses'], sortL:['ترتيب','Sort'], sDef:['الافتراضي','Default'], sQty:['الأكثر كمية','Highest qty'],
+    sNew:['الأحدث','Newest'], sCode:['حسب الكود','By code'], inWh:['في ','in '],
     oUnit:['الوحدة','Unit'], uDz:['درزن','Dozen'], uPc:['قطعة','Piece'],
     oTotJ:['إجمالي الجلابيات','Total jalabiyas'], oTotT:['إجمالي الثوب','Total thobes'],
     thobeB:['الثوب','Thobe'], thobeR:['الثوب الرسمي','Formal Thobe'], thobeM:['الثوب المودرن (مطعم / مطرز)','Modern Thobe (inlaid / embroidered)'], modelNo:['موديل','Model'], pcs:[' قطعة',' pcs'], sizes:['المقاسات','Sizes'], size:['المقاس','Size'], nSizes:[' مقاس',' sizes'], scrollMore:['↕ اسحب الجدول لباقي المقاسات','↕ Scroll for all sizes'],
@@ -445,17 +457,25 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   ITEMS.concat(LOWS).forEach(function(it){ it._codes = it.sz ? it.sz.map(function(x){ return x[0]; }).join(' ') : it.c; it.k = it.k || ''; it.cl = it.cl || ''; it.b = it.b || ''; it._t = norm(it.r+' '+it.rn+' '+it.m+' '+it.k+' '+it.cl+' '+it.b+' '+en('m',it.m)+' '+en('k',it.k)+' '+en('cl',it.cl)+' '+en('b',it.b)); });
 
   var active=null, mat=null;
+  // فلتر المستودع والترتيب (بيتحفظوا على جهاز المندوب)
+  var wh=null, sortBy='';
+  try{ wh=localStorage.getItem('ikaf-wh')||null; sortBy=localStorage.getItem('ikaf-sort')||''; }catch(e){}
+  function qOf(it){ return wh ? ((it.w&&it.w[wh])||0) : it.q; }
+  function szQ(x){ return wh ? ((x[3]&&x[3][wh])||0) : x[2]; }
+  function inWh(it){ return !wh || !!(it.w && it.w[wh]>0); }
   var matsEl=document.getElementById('mats');
 
   function tally(key, other, otherVal){
     var c={};
     ITEMS.forEach(function(it){
       if(otherVal!=null && it[other]!==otherVal) return;
+      if(!inWh(it)) return;
       if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
     });
     // أصناف جدول أقل من 20 درزن بتتحسب برده (كل الأصناف = الكروت + الجدول)
     LOWS.forEach(function(it){
       if(otherVal!=null && it[other]!==otherVal) return;
+      if(!inWh(it)) return;
       if(it[key]) c[it[key]]=(c[it[key]]||0)+1;
     });
     return c;
@@ -481,13 +501,55 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function buildChips(){
     var rc=tally('r','k',mat), kc=tally('k','r',active);
     chipsEl.textContent='';
-    chipsEl.appendChild(chip(t('all'),null,mat==null?ALLN:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
+    chipsEl.appendChild(chip(t('all'),null,(mat==null&&!wh)?ALLN:Object.keys(rc).reduce(function(a,k){return a+rc[k];},0),false));
     ratios.forEach(function(r){ chipsEl.appendChild(chip(r,r,rc[r],false)); });
     matsEl.textContent='';
     if(!mats.length){ matsEl.hidden=true; return; }
     matsEl.hidden=false;
-    matsEl.appendChild(chip(t('allMat'),null,active==null?ALLN:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
+    matsEl.appendChild(chip(t('allMat'),null,(active==null&&!wh)?ALLN:Object.keys(kc).reduce(function(a,k){return a+kc[k];},0),true));
     mats.forEach(function(k){ matsEl.appendChild(chip(k,k,kc[k],true)); });
+    buildWh(); buildSort();
+  }
+  var whsEl=document.getElementById('whs'), WHS=['الرياض','جدة','مكة'];
+  var PIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+  function buildWh(){
+    whsEl.textContent='';
+    var all=ITEMS.concat(LOWS);
+    [null].concat(WHS).forEach(function(w){
+      var n = w ? all.filter(function(it){ return it.w && it.w[w]>0; }).length : all.length;
+      var b=document.createElement('button'); b.type='button'; b.className='chip';
+      b.setAttribute('aria-pressed', String(wh===w));
+      b.innerHTML=(w?PIN:'')+(w?tv('w',w):t('whAll'))+' <span class="n">'+n+'</span>';
+      b.addEventListener('click',function(){
+        wh = (wh===w) ? null : w;
+        try{ wh ? localStorage.setItem('ikaf-wh',wh) : localStorage.removeItem('ikaf-wh'); }catch(e){}
+        gc('wh-'+(wh||'all'));
+        buildChips(); render();
+      });
+      whsEl.appendChild(b);
+    });
+  }
+  var sortSel=document.getElementById('sortsel');
+  function buildSort(){
+    document.getElementById('sortlbl').textContent=t('sortL');
+    sortSel.innerHTML=[['',t('sDef')],['qty',t('sQty')],['new',t('sNew')],['code',t('sCode')]].map(function(o){
+      return '<option value="'+o[0]+'"'+(sortBy===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('');
+  }
+  sortSel.addEventListener('change',function(){
+    sortBy=sortSel.value; try{ localStorage.setItem('ikaf-sort',sortBy); }catch(e){}
+    gc('sort-'+(sortBy||'def')); render(); window.scrollTo(0,0);
+  });
+  // الترتيب جوه كل مجموعة: الجلابيات بصور ← جاري التصوير ← الثوب (الثوب دايمًا في الآخر)
+  function grp(it){ return it.t ? 2 : (it.s==='pending' ? 1 : 0); }
+  function sortList(a){
+    if(!sortBy) return a;
+    return a.slice().sort(function(x,y){
+      var g=grp(x)-grp(y); if(g) return g;
+      if(sortBy==='qty') return qOf(y)-qOf(x);
+      if(sortBy==='new') return (y.f||0)-(x.f||0);
+      if(sortBy==='code') return (x.t&&y.t) ? String(x.mn).localeCompare(String(y.mn)) : x.c.localeCompare(y.c);
+      return 0;
+    });
   }
 
   var shown=[];
@@ -501,6 +563,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
     return (list||ITEMS).filter(function(it){
       if(active && it.r!==active) return false;
+      if(!inWh(it)) return false;
       if(mat && it.k!==mat) return false;
       if(onlyPend && !isPending(it)) return false;
       if(onlyNew && !it.n) return false;
@@ -540,12 +603,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     var f = /سبن/.test(it.k) ? ['سبن','Spun'] : /بول/.test(it.k) ? ['بوليستر','Polyester'] : [it.k, tv('k',it.k)];
     return '<span class="tfab">'+(LANG==='en'?'Fabric':'خامة')+' : <b>'+f[LANG==='en'?1:0]+'</b></span>';
   }
-  function isLow(it){ return !it.t && it.q!=null && it.q < LOW; }
+  function isLow(it){ return !it.t && it.q!=null && qOf(it) < LOW; }
 
   function card(it){
     var b=document.createElement('button');
     b.type='button'; b.className='card';
-    var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">'+t('qty')+' <b>'+it.q+'</b>'+(it.t?t('pcs'):'')+'</span>';
+    var qtyHtml = (it.q==null) ? '' : '<span class="qty'+(isLow(it)?' is-low':'')+'">'+t('qty')+' <b>'+qOf(it)+'</b>'+(it.t?t('pcs'):'')+'</span>';
     var n=pics(it).length;
     var picsHtml = n>1 ? '<span class="pics">'+n+t('pics')+'</span>' : '';
     // كمية قليلة في زاوية، ومنتج جديد/مخفض في الزاوية التانية عشان مايغطوش الموديل
@@ -560,7 +623,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   }
 
   function render(){
-    shown=onlyLow ? [] : filtered();
+    shown=onlyLow ? [] : sortList(filtered());
     grid.textContent='';
     var frag=document.createDocumentFragment();
     shown.forEach(function(it){ frag.appendChild(card(it)); });
@@ -601,7 +664,10 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function renderLow(){
     // "منتج جديد" و"جاري التصوير" فلاتر للكروت بس
     if(!LOWS.length || onlyNew || onlyPend || onlyThobe){ lowSec.hidden=true; return; }
-    lowShown=filtered(LOWS).sort(function(a,b){ return a.r.localeCompare(b.r) || b.q-a.q || a.c.localeCompare(b.c); });
+    lowShown=filtered(LOWS).sort(function(a,b){
+      if(sortBy==='qty') return qOf(b)-qOf(a) || a.c.localeCompare(b.c);
+      if(sortBy==='code') return a.c.localeCompare(b.c);
+      return a.r.localeCompare(b.r) || qOf(b)-qOf(a) || a.c.localeCompare(b.c); });
     lowSec.hidden = lowShown.length===0;
     if(onlyLow) empty.hidden = lowShown.length!==0;
     lowSec.classList.toggle('only', onlyLow);
@@ -615,7 +681,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     lowShown.forEach(function(it,i){
       h+='<tr class="r" data-i="'+i+'"><td class="c">'+it.c+(it.d?'<br><span class="disct">'+t('disc')+'</span>':'')+'</td><td><span class="badge">'+it.r+'</span></td>'+
         '<td class="d">'+tv('m',it.m)+(it.k?' · '+tv('k',it.k):'')+(it.cl?' · <b>'+tv('cl',it.cl)+'</b>':'')+'</td>'+
-        '<td class="qn">'+it.q+(cart[it.c]?'<span class="inc">'+t('inCart')+' '+cart[it.c]+'</span>':'')+'</td></tr>';
+        '<td class="qn">'+qOf(it)+(cart[it.c]?'<span class="inc">'+t('inCart')+' '+cart[it.c]+'</span>':'')+'</td></tr>';
     });
     lowBody.innerHTML=h+'</tbody></table>';
   }
@@ -762,22 +828,23 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     lb.querySelector('.lb-title .disctag').hidden=!it.d;
     lb.querySelector('.bigbadge').textContent=it.r;
     lb.querySelector('.v-r').hidden = lb.querySelector('.k-r').hidden = !!it.t;
-    lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : it.q) + (it.t ? t('pcs') : '') + (isLow(it) ? '<span class="lowtag">'+t('low')+'</span>' : '');
+    lb.querySelector('.v-q').innerHTML = (it.q==null ? '—' : qOf(it)) + (it.t ? t('pcs') : '') + (wh ? '<span class="whq">'+t('inWh')+tv('w',wh)+'</span>' : '') + (isLow(it) ? '<span class="lowtag">'+t('low')+'</span>' : '');
     // الثوب: جدول المقاسات (الكود / المقاس / الكمية) مكان الريشيو، والطلب من الجدول
     var szw=lb.querySelector('.szwrap'); szw.hidden=!it.t;
     lb.querySelector('.addrow').hidden = !!it.t;
     lb.querySelector('.lb-code').textContent = it.t ? (t('thobeB')+' — '+t('modelNo')+' '+it.mn) : it.c;
     if(it.t){
-      var h='<div class="szcap"><span>'+t('sizes')+': <b>'+it.sz.length+'</b></span>'+(it.sz.length>6?'<span>'+t('scrollMore')+'</span>':'')+'</div><div class="szscroll"><table class="sztbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('size')+'</th><th style="text-align:center">'+t('qty')+'</th><th style="text-align:center">'+t('orderQty')+'</th></tr></thead><tbody>';
-      it.sz.forEach(function(x){
-        h+='<tr><td class="c">'+x[0]+'</td><td class="s">'+x[1]+'</td><td class="n">'+x[2]+'</td>'+
+      var SZ=it.sz.filter(function(x){ return szQ(x)>0; });
+      var h='<div class="szcap"><span>'+t('sizes')+': <b>'+SZ.length+'</b>'+(wh?' <span class="whq">'+t('inWh')+tv('w',wh)+'</span>':'')+'</span>'+(SZ.length>6?'<span>'+t('scrollMore')+'</span>':'')+'</div><div class="szscroll"><table class="sztbl"><thead><tr><th>'+t('thCode')+'</th><th>'+t('size')+'</th><th style="text-align:center">'+t('qty')+'</th><th style="text-align:center">'+t('orderQty')+'</th></tr></thead><tbody>';
+      SZ.forEach(function(x){
+        h+='<tr><td class="c">'+x[0]+'</td><td class="s">'+x[1]+'</td><td class="n">'+szQ(x)+'</td>'+
            '<td style="text-align:center"><input type="text" inputmode="decimal" autocomplete="off" data-sz="'+x[0]+'" value="'+(cart[x[0]]||'')+'" placeholder="0" aria-label="'+x[1]+'"></td></tr>';
       });
       szw.innerHTML=h+'</tbody></table></div><div class="szfoot"><button class="btn primary" data-a="addsz" type="button">'+t('addSizes')+'</button></div>';
     } else szw.textContent='';
     var wEl=lb.querySelector('.v-w'); wEl.textContent='';
     if(it.w){ Object.keys(it.w).forEach(function(k){
-      var sp=document.createElement('span'); sp.textContent=tv('w',k); var b=document.createElement('b'); b.textContent=it.w[k];
+      var sp=document.createElement('span'); sp.textContent=tv('w',k); if(k===wh) sp.className='on'; var b=document.createElement('b'); b.textContent=it.w[k];
       sp.appendChild(b); wEl.appendChild(sp); }); }
     wEl.hidden=!it.w;
     lb.querySelector('.v-m').textContent=tv('m',it.m)+(it.t?' — '+t('modelNo')+' '+it.mn:'');
