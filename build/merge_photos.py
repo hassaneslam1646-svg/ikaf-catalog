@@ -457,6 +457,31 @@ def save_image(src, name):
                quality=THUMB_Q, method=6)
 
 
+
+def apply_first_seen(items):
+    """ترتيب «الأحدث»: أول يوم ظهر فيه الصنف ككارت على اللينك (build/first_seen.json  {مفتاح: YYYYMMDD}).
+    الصنف الجديد بياخد تاريخ النهارده أول ما يظهر، والملف بيتحفظ مع التحديث."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    fp = os.path.join(ROOT, "build", "first_seen.json")
+    try:
+        fs = json.load(open(fp, encoding="utf-8"))
+    except Exception:
+        fs = {}
+    day = int(datetime.now(ZoneInfo("Asia/Riyadh")).strftime("%Y%m%d"))
+    added = 0
+    for it in items:
+        if it.get("s") == "pending":
+            continue
+        k = ("t%s-%s-%s" % (it.get("mn"), it.get("cl", ""), it.get("b", ""))) if it.get("t") else it["c"]
+        if k not in fs:
+            fs[k] = day
+            added += 1
+        it["f"] = fs[k]
+    json.dump(dict(sorted(fs.items())), open(fp, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    if added:
+        log(f"أصناف ظهرت لأول مرة النهارده (ترتيب الأحدث): {added}")
+
 def main():
     global NEW_STOCK
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -740,6 +765,7 @@ def main():
     log(f"منتج جديد: {sum(1 for it in items if it.get('n'))} صنف"
         + (f" — مش ظاهرين في الكتالوج: {miss_new}" if miss_new else ""))
 
+    apply_first_seen(items)
     # الصفحة بتتبني من القالب عشان أي تعديل فيه يوصل
     tpl = open(os.path.join(ROOT, "build", "template.html"), encoding="utf-8").read()
     tpl = tpl.replace("__DATA__", json.dumps(items, ensure_ascii=False)).replace("__SOURCE__", source)
