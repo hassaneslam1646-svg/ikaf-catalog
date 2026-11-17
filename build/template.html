@@ -466,6 +466,10 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function qOf(it){ return wh ? ((it.w&&it.w[wh])||0) : it.q; }
   function szQ(x){ return wh ? ((x[3]&&x[3][wh])||0) : x[2]; }
   function inWh(it){ return !wh || !!(it.w && it.w[wh]>0); }
+  // نفس قاعدة الإجمالي جوه المستودع: الجلابية اللي رصيدها في المستودع المختار أقل من 20 درزن بتنزل الجدول
+  var MINC=20;
+  function cardPool(){ return wh ? ITEMS.filter(function(it){ return it.t || qOf(it)>=MINC; }) : ITEMS; }
+  function lowPool(){ return wh ? LOWS.concat(ITEMS.filter(function(it){ return !it.t && it.w && it.w[wh]>0 && qOf(it)<MINC; })) : LOWS; }
   var matsEl=document.getElementById('mats');
 
   function tally(key, other, otherVal){
@@ -564,7 +568,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   var onlyLow=false;   // فلتر "أقل من 20 درزن": الجدول بس من غير الكروت
   function filtered(list){
     var raw=q.value.trim(), d=digits(raw), t=norm(raw);
-    return (list||ITEMS).filter(function(it){
+    return (list||cardPool()).filter(function(it){
       if(active && it.r!==active) return false;
       if(!inWh(it)) return false;
       if(mat && it.k!==mat) return false;
@@ -634,7 +638,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     empty.hidden = onlyLow || shown.length!==0;
     clearBtn.hidden = q.value==='';
     // العدد = الكروت + أصناف جدول أقل من 20 درزن اللي مطابقة لنفس الفلتر
-    var lowMatch = (onlyNew||onlyPend||onlyThobe) ? 0 : filtered(LOWS).length, nAll = onlyLow ? lowMatch : shown.length + lowMatch;
+    var lowMatch = (onlyNew||onlyPend||onlyThobe) ? 0 : filtered(lowPool()).length, nAll = onlyLow ? lowMatch : shown.length + lowMatch;
     countEl.innerHTML = (onlyLow ? '<b>'+lowMatch+'</b>'+t('u20n')
       : nAll===ALLN
       ? t('allItems')+' — <b>'+ALLN+'</b>'+(LANG==='en'?'':t('items'))
@@ -644,7 +648,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       + (THR ? '<button type="button" class="pendbtn thobebtn" data-tk="r" aria-pressed="'+(onlyThobe==='r')+'">'+t('thobeR')+' '+THR+'</button>' : '')
       + (THM ? '<button type="button" class="pendbtn thobebtn" data-tk="m" aria-pressed="'+(onlyThobe==='m')+'">'+t('thobeM')+' '+THM+'</button>' : '')
       + (PENDN ? '<button type="button" class="pendbtn pend" aria-pressed="'+onlyPend+'">'+t('pendB')+' '+PENDN+'</button>' : '')
-      + (LOWS.length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+LOWS.length+' <span class="note">'+t('lowNote')+'</span></button>' : '');
+      + (lowPool().filter(inWh).length ? '<button type="button" class="pendbtn lowbtn" aria-pressed="'+onlyLow+'">'+t('lowB')+' '+lowPool().filter(inWh).length+' <span class="note">'+t('lowNote')+'</span></button>' : '');
     // الفلاتر التلاتة واحد بس شغال في نفس الوقت
     var nb=countEl.querySelector('.newbtn');
     if(nb) nb.addEventListener('click',function(){ onlyNew=!onlyNew; onlyPend=onlyLow=onlyDisc=onlyThobe=false; render(); });
@@ -666,8 +670,8 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   function lowIsOpen(){ return onlyLow || (lowOpen==null && onlyDisc) || (lowOpen!=null ? lowOpen : !!(active||mat||q.value.trim())); }
   function renderLow(){
     // "منتج جديد" و"جاري التصوير" فلاتر للكروت بس
-    if(!LOWS.length || onlyNew || onlyPend || onlyThobe){ lowSec.hidden=true; return; }
-    lowShown=filtered(LOWS).sort(function(a,b){
+    if(!lowPool().length || onlyNew || onlyPend || onlyThobe){ lowSec.hidden=true; return; }
+    lowShown=filtered(lowPool()).sort(function(a,b){
       if(sortBy==='qty') return qOf(b)-qOf(a) || a.c.localeCompare(b.c);
       if(sortBy==='code') return a.c.localeCompare(b.c);
       return a.r.localeCompare(b.r) || qOf(b)-qOf(a) || a.c.localeCompare(b.c); });
