@@ -1,7 +1,7 @@
 // تطبيق مخزون إكاف — نسخة مبسطة ومتوافقة مع آيفون (Safari)
 // - الصفحة: من النت الأول، ولو مفيش نت (أو النت واقف أكتر من 5 ثواني) آخر نسخة محفوظة
 // - الصور: من النت عادي زي اللينك بالظبط، ولو مفيش نت بس بنعرض المحفوظ
-const V = 'ikaf-v4';
+const V = 'ikaf-v5';
 const PAGE = V + '-page', IMG = V + '-img';
 
 self.addEventListener('install', e => {
@@ -25,7 +25,8 @@ self.addEventListener('fetch', e => {
   if (u.origin !== location.origin) return;              // أي حاجة بره الموقع: المتصفح يتعامل معاها لوحده
 
   if (req.mode === 'navigate') {
-    const net = fetch(req).then(r => {
+    // من النت مباشرة من غير كاش المتصفح، عشان أي تحديث يظهر أول ما المندوب يفتح
+    const net = fetch(req.url, {cache: 'no-store', credentials: 'same-origin'}).then(r => {
       if (r && r.ok) { const cl = r.clone(); caches.open(PAGE).then(c => c.put('./', cl)).catch(() => {}); }
       return r;
     });
