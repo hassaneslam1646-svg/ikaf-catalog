@@ -93,6 +93,16 @@ img{max-width:100%}
 .ioshint .x{position:absolute;top:8px;inset-inline-end:10px;border:0;background:transparent;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
 .ioshint::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:var(--surface)}
 html.standalone .instbtn{display:none!important}
+.rfbtn{display:inline-flex;align-items:center;justify-content:center;padding-inline:9px}
+.rfbtn svg{width:15px;height:15px}
+.rfbtn.spin svg{animation:rf-spin .7s linear infinite}
+@keyframes rf-spin{to{transform:rotate(360deg)}}
+/* السحب لتحت للتحديث (التطبيق على الموبايل) */
+#ptr{position:fixed;left:50%;top:0;z-index:80;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;color:var(--navy);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transform:translateY(-60px);opacity:0;pointer-events:none}
+#ptr svg{width:20px;height:20px}
+#ptr.go{color:#fff;background:var(--orange)}
+#ptr.run svg{animation:rf-spin .7s linear infinite}
 #splash{display:none}
 html.splash-on #splash{display:flex;animation:sp-kill 0s 6s forwards}
 @keyframes sp-kill{to{opacity:0;visibility:hidden;pointer-events:none}}
@@ -352,7 +362,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       <div class="titles">
         <span class="org">شركة اكاف العربية - إدارة سلسلة الامداد</span>
         <span class="mark"><span class="dash"></span><span class="ttl">تحديث المخزون</span><span class="date"><span class="dt">19-11-2026</span><span class="dt">2:18 م</span></span></span>
-        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button><button type="button" class="langbtn instbtn" id="inst" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span></span></button></span>
+        <span class="sub"><span id="total"></span><button type="button" class="langbtn" id="lang" lang="en"></button><button type="button" class="langbtn rfbtn" id="rf" hidden aria-label="تحديث" title="تحديث"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button><button type="button" class="langbtn instbtn" id="inst" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span></span></button></span>
       </div>
       <img class="logo" src="logo.png" alt="إكاف IKAF" width="203" height="160">
     </div>
@@ -1198,6 +1208,46 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     setTimeout(kill,15000);
   }
   function busy(){ var l=document.querySelector('.lb'), c=document.querySelector('.cart'); return (l&&!l.hidden)||(c&&!c.hidden); }
+
+  // تحديث الصفحة جوه التطبيق: زرار ↻ على الكمبيوتر، والسحب لتحت على الموبايل (المتصفح عنده بتوعه)
+  (function(){
+    if(!standalone) return;
+    var touch=('ontouchstart' in window) || navigator.maxTouchPoints>0;
+    // أي جهاز فيه ماوس (كمبيوتر أو لاب توب حتى لو شاشته تاتش) بيظهر عليه زرار ↻
+    var mouse=window.matchMedia && (matchMedia('(any-pointer: fine)').matches || matchMedia('(any-hover: hover)').matches);
+    if(mouse || !touch){
+      var rf=document.getElementById('rf'); rf.hidden=false;
+      rf.addEventListener('click',function(){ rf.classList.add('spin'); location.reload(); });
+    }
+    if(!touch) return;
+    var ARROW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
+    var ind=document.createElement('div'); ind.id='ptr'; ind.innerHTML=ARROW; document.body.appendChild(ind);
+    var y0=null, d=0, LIMIT=110, running=false;
+    function open(){ var l=document.querySelector('.lb'), c=document.querySelector('.cart'), s=document.getElementById('splash');
+      return (l&&!l.hidden)||(c&&!c.hidden)||!!s; }
+    function show(px){ var p=Math.min(px,LIMIT*1.3);
+      ind.style.transition='none';
+      ind.style.opacity=Math.min(1,p/50);
+      ind.style.transform='translateY('+(p*0.75-20)+'px) rotate('+(p*2.6)+'deg)';
+      ind.classList.toggle('go', p>=LIMIT); }
+    function reset(){ ind.style.transition='transform .25s, opacity .25s'; ind.style.transform='translateY(-60px)'; ind.style.opacity=0; ind.classList.remove('go'); }
+    window.addEventListener('touchstart',function(e){
+      if(running || open() || window.scrollY>0 || e.touches.length!==1){ y0=null; return; }
+      y0=e.touches[0].clientY; d=0;
+    },{passive:true});
+    window.addEventListener('touchmove',function(e){
+      if(y0==null) return;
+      if(window.scrollY>0){ y0=null; reset(); return; }
+      d=e.touches[0].clientY-y0;
+      if(d>8) show(d-8); else if(d<0){ y0=null; reset(); }
+    },{passive:true});
+    window.addEventListener('touchend',function(){
+      if(y0==null) return; y0=null;
+      if(d-8>=LIMIT){ running=true; ind.classList.add('run','go'); ind.style.transition='transform .2s'; ind.style.transform='translateY(70px)'; setTimeout(function(){ location.reload(); },150); }
+      else reset();
+    },{passive:true});
+  })();
+
   if(isIOS && !standalone){
     btn.hidden=false;
     setTimeout(function(){ if(!busy()) showIOS(false); }, 2500);
