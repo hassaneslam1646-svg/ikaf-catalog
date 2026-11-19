@@ -1213,11 +1213,13 @@ html[dir="ltr"] .mark .dt{direction:ltr}
   (function(){
     if(!standalone) return;
     var touch=('ontouchstart' in window) || navigator.maxTouchPoints>0;
-    if(!touch){
+    // أي جهاز فيه ماوس (كمبيوتر أو لاب توب حتى لو شاشته تاتش) بيظهر عليه زرار ↻
+    var mouse=window.matchMedia && (matchMedia('(any-pointer: fine)').matches || matchMedia('(any-hover: hover)').matches);
+    if(mouse || !touch){
       var rf=document.getElementById('rf'); rf.hidden=false;
       rf.addEventListener('click',function(){ rf.classList.add('spin'); location.reload(); });
-      return;
     }
+    if(!touch) return;
     var ARROW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
     var ind=document.createElement('div'); ind.id='ptr'; ind.innerHTML=ARROW; document.body.appendChild(ind);
     var y0=null, d=0, LIMIT=110, running=false;
