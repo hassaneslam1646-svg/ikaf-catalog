@@ -422,9 +422,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     emptyB:['مفيش كود مطابق','No matching code'],
     emptyT:['جرّب تكتب جزء من الكود بس، أو دوّر بالريشيو (B24) أو باسم الموديل (نصف كم عادى).','Try typing part of the code, or search by ratio (B24) or model (Short Sleeve).'],
     disc:['مخفض','Discount'],
-    overT:['اتضاف — بس المطلوب أكبر من المتاح: ','Added — but more than available: '],
-    overS:['اتضاف — مقاسات المطلوب فيها أكبر من المتاح: ','Added — sizes over available: '],
-    overN:['صنف المطلوب فيه أكبر من المتاح — راجعه قبل الإرسال','item(s) exceed available qty — review before sending'],
+    overW:['الكمية المطلوبة أكبر من المتاح ( راجع الكمية )','Requested qty exceeds available ( review qty )'],
     whAll:['كل المستودعات','All warehouses'], sortL:['ترتيب','Sort'], sDef:['الافتراضي','Default'], sQty:['الأكثر كمية','Highest qty'],
     sQtyA:['الأقل كمية','Lowest qty'], sCode:['حسب الكود','By code'], inWh:['في ','in '],
     oUnit:['الوحدة','Unit'], uDz:['درزن','Dozen'], uPc:['قطعة','Piece'],
@@ -954,7 +952,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     });
     if(!n && !ch){ toast(t('enterSizes')); return; }
     persist();
-    toast(ov ? t('overS')+ov : (n ? t('added') : t('removed')), ov?3500:0);
+    toast(ov ? t('overW') : (n ? t('added') : t('removed')), ov?3500:0);
   }
   function addFromLb(){
     var it=cur[idx]; if(!it) return;
@@ -962,7 +960,7 @@ html[dir="ltr"] .mark .dt{direction:ltr}
     if(!n){ if(cart[it.c]){ delete cart[it.c]; persist(); fill(); toast(t('removed')); } else toast(t('enterQty')); return; }
     var was=!!cart[it.c]; cart[it.c]=n; persist(); fill();
     var av=availOf(it);
-    if(av!=null && n>av) toast(t('overT')+av+(wh?' '+t('inWh')+tv('w',wh):''), 3500);
+    if(av!=null && n>av) toast(t('overW'), 3500);
     else toast(was ? t('updated') : t('added'));
   }
 
@@ -1015,12 +1013,12 @@ html[dir="ltr"] .mark .dt{direction:ltr}
       var row=document.createElement('div'); row.className='ci';
       row.innerHTML=((isPending(it)||isLowS(it))?'<img alt="" src="logo.png" style="object-fit:contain;background:#1A2150;padding:6px">':'<img alt="" src="'+thumbSrc(it)+'">')+
         '<div><div class="c">'+c+'</div><div class="d">'+it.r+' · '+tv('m',it.m)+(it.k?' · '+tv('k',it.k):'')+(it.cl?' · '+tv('cl',it.cl):'')+(it.b?' · '+tv('b',it.b):'')+'</div>'+
-        '<div class="d'+(over?' warn':'')+'">'+t('avail')+(wh?t('inWh')+tv('w',wh)+' ':'')+(av==null?'—':av)+(over?t('over'):'')+'</div></div>'+
+        '<div class="d'+(over?' warn':'')+'">'+t('avail')+(wh?t('inWh')+tv('w',wh)+' ':'')+(av==null?'—':av)+'</div></div>'+
         '<div class="ctl"><input type="text" inputmode="decimal" autocomplete="off" data-code="'+c+'" value="'+cart[c]+'" aria-label="'+t('qty')+'">'+
         '<button class="rm" type="button" data-c="rm" data-code="'+c+'">'+t('del')+'</button></div>';
       list.appendChild(row);
     });
-    if(nOver){ var wv=document.createElement('div'); wv.className='cart-warn'; wv.textContent='⚠️ '+nOver+' '+t('overN'); list.insertBefore(wv,list.firstChild); }
+    if(nOver){ var wv=document.createElement('div'); wv.className='cart-warn'; wv.textContent='⚠️ '+t('overW'); list.insertBefore(wv,list.firstChild); }
     pendingFile=null; cartEl.querySelector('[data-c="share"]').textContent=t('sendFile');
     cartEl.querySelector('[data-c="share"]').disabled = !codes.length;
     cartEl.querySelector('[data-c="text"]').disabled = !codes.length;
